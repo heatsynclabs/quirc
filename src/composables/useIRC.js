@@ -211,6 +211,7 @@ export function useIRC() {
         channels.setActive(channel)
       }
       client.who(channel)
+      client.chathistory(channel, 100)
     } else {
       usersStore.addUser(channel, nick)
       if (settings.showJoinPart) {
@@ -382,6 +383,48 @@ export function useIRC() {
         channel: msg.params[0],
         status: typing,
       })
+    }
+  })
+
+  // --- CHATHISTORY (batch:end) ---
+  on('batch:end', (batch) => {
+    if (batch.type !== 'chathistory') return
+    const channel = batch.target
+    if (!channel) return
+
+    for (const msg of batch.messages) {
+      if (msg.command !== 'PRIVMSG') continue
+
+      const target = msg.params[0]
+      const rawText = msg.params[1] || ''
+      const text = stripFormatting(rawText)
+      const nick = msg.source?.nick || '???'
+      const time = msg.tags['time']
+        ? formatTime(new Date(msg.tags['time']), settings.use24hTime)
+        : formatTime(new Date(), settings.use24hTime)
+
+      const ch = target.startsWith('#') ? target : nick
+
+      if (text.startsWith('\x01ACTION ') && text.endsWith('\x01')) {
+        messages.addMessage(ch, {
+          id: msg.tags['msgid'] || Date.now() + Math.random(),
+          nick, time,
+          text: text.slice(8, -1),
+          isAction: true,
+          msgid: msg.tags['msgid'],
+          isHistory: true,
+        })
+      } else {
+        messages.addMessage(ch, {
+          id: msg.tags['msgid'] || Date.now() + Math.random(),
+          nick, time, text,
+          msgid: msg.tags['msgid'],
+          linkPreview: null,
+          hasImage: false,
+          imageUrl: null,
+          isHistory: true,
+        })
+      }
     }
   })
 

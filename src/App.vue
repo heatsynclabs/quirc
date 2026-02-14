@@ -169,11 +169,42 @@ function _onTyping({ nick, channel, status }) {
 }
 client.on('typing', _onTyping)
 
+// Parse URL query params for server auto-config
+// e.g. ?server=irc.example.org&ws=wss://...&port=6697&channels=general,random&nick=guest
+function applyUrlConfig() {
+  const params = new URLSearchParams(window.location.search)
+  if (!params.has('ws') && !params.has('server')) return false
+
+  const config = {}
+  if (params.has('server')) config.serverHost = params.get('server')
+  if (params.has('ws')) config.gatewayUrl = params.get('ws')
+  if (params.has('port')) config.serverPort = Number(params.get('port'))
+  if (params.has('nick')) config.nick = params.get('nick')
+  if (params.has('channels')) {
+    config.autoJoinChannels = params.get('channels')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(s => s.startsWith('#') ? s : `#${s}`)
+  }
+
+  connection.configure(config)
+
+  // Clean URL params after applying
+  if (window.history.replaceState) {
+    const clean = window.location.pathname + window.location.hash
+    window.history.replaceState({}, '', clean)
+  }
+
+  return !!(config.gatewayUrl && config.nick)
+}
+
 function onSplashDone() {
   showSplash.value = false
   notifications.requestPermission()
 
-  if (connection.isConfigured) {
+  const autoConnect = applyUrlConfig()
+  if (autoConnect || connection.isConfigured) {
     irc.connect()
   } else {
     ui.connectionModalOpen = true
@@ -295,12 +326,23 @@ function onGlobalKeydown(e) {
   }
 }
 
+// Mobile viewport: track visual viewport height to handle keyboard resize
+function updateAppHeight() {
+  const vh = window.visualViewport?.height ?? window.innerHeight
+  document.documentElement.style.setProperty('--app-height', `${vh}px`)
+}
+
 onMounted(() => {
   window.addEventListener('keydown', onGlobalKeydown)
+  updateAppHeight()
+  window.visualViewport?.addEventListener('resize', updateAppHeight)
+  window.addEventListener('resize', updateAppHeight)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
+  window.visualViewport?.removeEventListener('resize', updateAppHeight)
+  window.removeEventListener('resize', updateAppHeight)
   client.off('typing', _onTyping)
   client.off('PRIVMSG', _onNotifyPrivmsg)
   for (const timer of _typingTimers.values()) {
@@ -312,7 +354,7 @@ onUnmounted(() => {
 
 <style scoped>
 .app {
-  height: 100dvh;
+  height: var(--app-height, 100dvh);
   width: 100%;
   display: flex;
   flex-direction: column;

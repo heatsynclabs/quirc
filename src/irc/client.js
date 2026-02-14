@@ -18,6 +18,7 @@ export class IRCClient {
     this._saslInProgress = false
     this._capAcked = []
     this._motdBuffer = []
+    this._batches = {} // id -> { type, target, messages[] }
   }
 
   connect(url, nick, { password = null, realname = 'QUIRC User', sasl = null } = {}) {
@@ -41,6 +42,7 @@ export class IRCClient {
     this._saslInProgress = false
     this._capAcked = []
     this._motdBuffer = []
+    this._batches = {}
 
     try {
       this.ws = new WebSocket(url)
@@ -237,6 +239,33 @@ export class IRCClient {
       return
     }
 
+    // BATCH start/end
+    if (msg.command === 'BATCH') {
+      const ref = msg.params[0]
+      if (ref.startsWith('+')) {
+        const id = ref.slice(1)
+        this._batches[id] = {
+          type: msg.params[1] || '',
+          target: msg.params[2] || '',
+          messages: [],
+        }
+      } else if (ref.startsWith('-')) {
+        const id = ref.slice(1)
+        const batch = this._batches[id]
+        if (batch) {
+          delete this._batches[id]
+          this._emit('batch:end', batch)
+        }
+      }
+      return
+    }
+
+    // If message belongs to a batch, collect it
+    if (msg.tags.batch && this._batches[msg.tags.batch]) {
+      this._batches[msg.tags.batch].messages.push(msg)
+      return
+    }
+
     // Emit for everything else
     this._emit('raw', msg, raw)
     this._emit(msg.command, msg)
@@ -380,6 +409,11 @@ export class IRCClient {
 
   away(message = '') {
     this.sendRaw(`AWAY${message ? ` :${message}` : ''}`)
+  }
+
+  chathistory(target, limit = 100) {
+    if (!this._capAcked.includes('chathistory')) return
+    this.sendRaw(`CHATHISTORY LATEST ${target} * ${limit}`)
   }
 
   on(event, handler) {

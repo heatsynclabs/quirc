@@ -9,7 +9,7 @@
 }
 
 html, body {
-  height: 100dvh;
+  height: 100%;
   width: 100%;
   overflow: hidden;
   background: var(--q-bg-primary);
@@ -19,14 +19,15 @@ html, body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  position: fixed;
+  touch-action: none;
 }
 
 #app {
-  height: 100dvh;
+  height: calc(var(--app-height, 100dvh));
   width: 100%;
   overflow: hidden;
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }

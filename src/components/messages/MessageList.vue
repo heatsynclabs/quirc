@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import MessageItem from './MessageItem.vue'
 import TypingIndicator from '@/components/shared/TypingIndicator.vue'
 
@@ -45,12 +45,30 @@ const endRef = ref(null)
 
 function scrollToBottom() {
   nextTick(() => {
-    endRef.value?.scrollIntoView({ behavior: 'smooth' })
+    if (scrollRef.value) {
+      scrollRef.value.scrollTop = scrollRef.value.scrollHeight
+    }
   })
 }
 
 watch(() => props.messages.length, scrollToBottom)
-onMounted(scrollToBottom)
+
+// Re-scroll when mobile keyboard opens/closes (viewport resize)
+function onViewportResize() {
+  // Only auto-scroll if already near the bottom
+  if (!scrollRef.value) return
+  const { scrollTop, scrollHeight, clientHeight } = scrollRef.value
+  const nearBottom = scrollHeight - scrollTop - clientHeight < 150
+  if (nearBottom) scrollToBottom()
+}
+
+onMounted(() => {
+  scrollToBottom()
+  window.visualViewport?.addEventListener('resize', onViewportResize)
+})
+onUnmounted(() => {
+  window.visualViewport?.removeEventListener('resize', onViewportResize)
+})
 
 function onReply(msg) {
   emit('reply', msg)
