@@ -1,6 +1,9 @@
 network:
   name: QuircIRC
 
+datastore:
+  path: /ircd/ircd.db
+
 server:
   name: irc.quirc.chat
 
