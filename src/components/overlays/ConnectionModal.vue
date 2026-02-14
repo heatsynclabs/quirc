@@ -50,6 +50,9 @@
         <button class="conn__btn conn__btn--connect" :disabled="!canConnect" @click="onConnect">
           {{ connecting ? 'CONNECTING...' : 'CONNECT' }}
         </button>
+        <button class="conn__btn conn__btn--save" :disabled="!canConnect" @click="onSaveProfile">
+          SAVE PROFILE
+        </button>
       </div>
 
       <div v-if="savedServers.length" class="conn__saved">
@@ -135,6 +138,21 @@ function onConnect() {
   })
 
   emit('connect')
+}
+
+function onSaveProfile() {
+  if (!canConnect.value) return
+  const channels = autoJoinStr.value
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(s => s.startsWith('#') ? s : `#${s}`)
+
+  connection.addSavedServer({
+    id: Date.now(),
+    ...form.value,
+    autoJoinChannels: channels,
+  })
 }
 
 function loadProfile(s) {
@@ -282,10 +300,23 @@ function loadProfile(s) {
   color: #000;
 }
 
-.conn__btn--connect:disabled {
+.conn__btn--connect:disabled,
+.conn__btn--save:disabled {
   background: var(--q-border-strong);
   color: var(--q-text-dim);
   cursor: not-allowed;
+}
+
+.conn__btn--save {
+  background: var(--q-bg-secondary);
+  color: var(--q-text-secondary);
+  border: 1px solid var(--q-border-strong);
+  margin-top: 8px;
+}
+
+.conn__btn--save:hover:not(:disabled) {
+  border-color: var(--q-accent-teal);
+  color: var(--q-accent-teal);
 }
 
 .conn__saved {

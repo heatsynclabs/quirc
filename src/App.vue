@@ -1,6 +1,6 @@
 <template>
   <SplashScreen v-if="showSplash" @done="onSplashDone" />
-  <div v-else class="app">
+  <div v-else class="app" :style="appStyle">
     <NoiseOverlay />
 
     <TopBar
@@ -86,13 +86,14 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui'
 import { useConnectionStore } from '@/stores/connection'
 import { useChannelsStore } from '@/stores/channels'
 import { useMessagesStore } from '@/stores/messages'
 import { useUsersStore } from '@/stores/users'
+import { useSettingsStore } from '@/stores/settings'
 import { useIRC } from '@/composables/useIRC'
 import { getClient } from '@/irc/client'
 import { useNotifications } from '@/composables/useNotifications'
@@ -115,6 +116,7 @@ const connection = useConnectionStore()
 const channels = useChannelsStore()
 const messages = useMessagesStore()
 const users = useUsersStore()
+const settings = useSettingsStore()
 const irc = useIRC()
 const notifications = useNotifications()
 
@@ -125,51 +127,86 @@ const showSplash = ref(true)
 const inputText = ref('')
 const inputBarRef = ref(null)
 const typingNicks = ref([])
+const _typingTimers = new Map()
+
+// Font size CSS variable
+const appStyle = computed(() => ({
+  '--q-font-size-base': `${settings.fontSize}px`,
+}))
 
 // Listen for typing events from IRC
 const client = getClient()
-client.on('typing', ({ nick, channel, status }) => {
+
+function _onTyping({ nick, channel, status }) {
+  if (!settings.showTypingIndicators) return
   if (channel !== channels.activeChannel) return
+
+  // Clear existing timer for this nick
+  if (_typingTimers.has(nick)) {
+    clearTimeout(_typingTimers.get(nick))
+    _typingTimers.delete(nick)
+  }
+
   if (status === 'active') {
     if (!typingNicks.value.includes(nick)) {
       typingNicks.value = [...typingNicks.value, nick]
     }
+    // Auto-expire after 7 seconds
+    const timer = setTimeout(() => {
+      typingNicks.value = typingNicks.value.filter(n => n !== nick)
+      _typingTimers.delete(nick)
+    }, 7000)
+    _typingTimers.set(nick, timer)
   } else {
     typingNicks.value = typingNicks.value.filter(n => n !== nick)
   }
-})
+}
+client.on('typing', _onTyping)
 
 function onSplashDone() {
   showSplash.value = false
   notifications.requestPermission()
 
   if (connection.isConfigured) {
-    // Auto-connect if we have saved config
     irc.connect()
   } else {
-    // First run - show connection modal
     ui.connectionModalOpen = true
   }
 }
 
-// Notifications for DMs and mentions
-client.on('PRIVMSG', (msg) => {
+// Notifications for DMs and mentions — gated on settings
+function _onNotifyPrivmsg(msg) {
+  if (!settings.desktopNotifications) return
+
   const nick = msg.source?.nick || '???'
   if (nick === client.nick) return
   const target = msg.params[0]
   const text = msg.params[1] || ''
 
   // DM: target is our nick
-  if (!target.startsWith('#')) {
+  if (!target.startsWith('#') && settings.notifyOnDM) {
     notifications.notify(`DM from ${nick}`, text)
     return
   }
 
   // @mention in channel
-  if (text.toLowerCase().includes(client.nick.toLowerCase())) {
+  if (settings.notifyOnMention && text.toLowerCase().includes(client.nick.toLowerCase())) {
     notifications.notify(`${nick} in ${target}`, text)
+    return
   }
-})
+
+  // Custom keyword matching
+  if (settings.notifyKeywords.length > 0) {
+    const lower = text.toLowerCase()
+    for (const kw of settings.notifyKeywords) {
+      if (kw && lower.includes(kw.toLowerCase())) {
+        notifications.notify(`${nick} in ${target}`, text)
+        return
+      }
+    }
+  }
+}
+client.on('PRIVMSG', _onNotifyPrivmsg)
 
 function onConnect() {
   ui.connectionModalOpen = false
@@ -184,10 +221,16 @@ if (route.params.name) {
   }
 }
 
+// Sync active channel -> route
+watch(() => channels.activeChannel, (ch) => {
+  if (!ch) return
+  const name = ch.startsWith('#') ? ch.slice(1) : ch
+  const current = route.params.name
+  if (current !== name) router.replace(`/channel/${name}`)
+})
+
 function onChannelPick(name) {
   channels.setActive(name)
-  const routeName = name.replace('#', '')
-  router.push(`/channel/${routeName}`)
 }
 
 function onSend() {
@@ -205,7 +248,6 @@ function onReply(msg) {
 function onReact(msgId, emoji) {
   messages.addReaction(channels.activeChannel, msgId, emoji)
   const channel = channels.activeChannel
-  // Only send TAGMSG if msgId looks like a real IRC msgid (not a local fallback number)
   if (channel && typeof msgId === 'string') {
     client.tagmsg(channel, { '+draft/react': emoji, '+draft/reply': msgId })
   }
@@ -228,9 +270,37 @@ function onJoinChannel(channel, key) {
 function onOpenDM(nick) {
   channels.addChannel(nick, 'Direct message')
   channels.setActive(nick)
-  const routeName = nick.replace('#', '')
-  router.push(`/channel/${routeName}`)
 }
+
+// Global keyboard shortcuts
+function onGlobalKeydown(e) {
+  if (e.key === 'Escape') {
+    if (ui.searchOpen) { ui.searchOpen = false; return }
+    if (ui.settingsOpen) { ui.settingsOpen = false; return }
+    if (ui.joinChannelOpen) { ui.joinChannelOpen = false; return }
+    if (ui.connectionModalOpen && connection.isConfigured) { ui.connectionModalOpen = false; return }
+    if (ui.channelDrawerOpen) { ui.channelDrawerOpen = false; return }
+    if (ui.usersDrawerOpen) { ui.usersDrawerOpen = false; return }
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault()
+    ui.toggleSearch()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onGlobalKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onGlobalKeydown)
+  client.off('typing', _onTyping)
+  client.off('PRIVMSG', _onNotifyPrivmsg)
+  for (const timer of _typingTimers.values()) {
+    clearTimeout(timer)
+  }
+  _typingTimers.clear()
+})
 </script>
 
 <style scoped>

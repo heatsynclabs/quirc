@@ -45,6 +45,7 @@ import { IconReply, IconClose, IconPaperclip } from '@/components/icons'
 import { getNickColor } from '@/utils/nickColor'
 import { useUsersStore } from '@/stores/users'
 import { useChannelsStore } from '@/stores/channels'
+import { useSettingsStore } from '@/stores/settings'
 import { getClient } from '@/irc/client'
 import { useFileUpload } from '@/composables/useFileUpload'
 
@@ -58,6 +59,7 @@ const emit = defineEmits(['update:modelValue', 'send', 'clearReply'])
 const inputRef = ref(null)
 const usersStore = useUsersStore()
 const channelsStore = useChannelsStore()
+const settingsStore = useSettingsStore()
 const ircClient = getClient()
 
 // Typing indicator
@@ -65,12 +67,14 @@ let lastTypingSent = 0
 let typingTimeout = null
 
 function sendTyping(status) {
+  if (!settingsStore.sendTypingIndicators) return
   const ch = channelsStore.activeChannel
   if (!ch || !ircClient._capAcked.includes('message-tags')) return
   ircClient.tagmsg(ch, { '+typing': status })
 }
 
 function onInputEvent() {
+  if (!settingsStore.sendTypingIndicators) return
   const now = Date.now()
   if (now - lastTypingSent > 3000) {
     sendTyping('active')

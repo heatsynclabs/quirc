@@ -9,6 +9,7 @@ import { useUiStore } from '@/stores/ui'
 import { useSettingsStore } from '@/stores/settings'
 import { formatTime } from '@/utils/time'
 import { detectUrls } from '@/utils/linkDetect'
+import { stripFormatting } from '@/irc/format'
 
 const IMAGE_RE = /\.(jpe?g|png|gif|webp|svg)(\?.*)?$/i
 
@@ -33,7 +34,7 @@ export function useIRC() {
   on('status', (status, error) => {
     connection.setStatus(status, error)
     if (status === 'disconnected') {
-      usersStore.clearUsers()
+      usersStore.clearAll()
     }
   })
 
@@ -66,7 +67,6 @@ export function useIRC() {
   // --- Nick errors ---
   on('nick:error', ({ code, nick, message }) => {
     if (code === '433' && client.status !== 'connected') {
-      // Nick in use during registration - try alternative
       _nickAttempt++
       const altNick = `${connection.nick}_${_nickAttempt}`
       client.changeNick(altNick)
@@ -103,7 +103,8 @@ export function useIRC() {
   // --- PRIVMSG ---
   on('PRIVMSG', (msg) => {
     const target = msg.params[0]
-    const text = msg.params[1] || ''
+    const rawText = msg.params[1] || ''
+    const text = stripFormatting(rawText)
     const nick = msg.source?.nick || '???'
     const time = msg.tags['time']
       ? formatTime(new Date(msg.tags['time']), settings.use24hTime)
@@ -139,17 +140,16 @@ export function useIRC() {
       const urls = detectUrls(text)
       if (urls.length > 0) {
         const firstUrl = urls[0].url
-        if (IMAGE_RE.test(firstUrl)) {
+        if (settings.inlineImages && IMAGE_RE.test(firstUrl)) {
           messageObj.hasImage = true
           messageObj.imageUrl = firstUrl
-        } else {
+        } else if (settings.linkPreviews) {
           const unfurlApi = import.meta.env.VITE_UNFURL_API
           if (unfurlApi) {
             fetch(`${unfurlApi}?url=${encodeURIComponent(firstUrl)}`)
               .then(r => r.ok ? r.json() : null)
               .then(data => {
                 if (!data || !data.title) return
-                // Find the message through the reactive store to trigger UI update
                 const channelMsgs = messages.messagesByChannel[channel]
                 if (!channelMsgs) return
                 const stored = channelMsgs.find(m => m.id === messageObj.id)
@@ -185,7 +185,7 @@ export function useIRC() {
       channels.addChannel(nick, 'Direct message')
     }
 
-    if (channel !== channels.activeChannel) {
+    if (channel !== channels.activeChannel && !channels.isMuted(channel)) {
       channels.incrementUnread(channel)
     }
   })
@@ -212,7 +212,7 @@ export function useIRC() {
       }
       client.who(channel)
     } else {
-      usersStore.addUser(nick)
+      usersStore.addUser(channel, nick)
       if (settings.showJoinPart) {
         messages.addSystemMessage(channel, `${nick} has joined ${channel}`)
       }
@@ -228,8 +228,9 @@ export function useIRC() {
     if (nick === client.nick) {
       channels.removeChannel(channel)
       messages.clearChannel(channel)
+      usersStore.clearChannel(channel)
     } else {
-      usersStore.removeUser(nick)
+      usersStore.removeUser(channel, nick)
       if (settings.showJoinPart) {
         messages.addSystemMessage(channel, `${nick} has left ${channel}${reason ? ` (${reason})` : ''}`)
       }
@@ -247,9 +248,9 @@ export function useIRC() {
 
     if (kicked === client.nick) {
       channels.removeChannel(channel)
-      usersStore.clearUsers()
+      usersStore.clearChannel(channel)
     } else {
-      usersStore.removeUser(kicked)
+      usersStore.removeUser(channel, kicked)
     }
   })
 
@@ -257,10 +258,13 @@ export function useIRC() {
   on('QUIT', (msg) => {
     const nick = msg.source?.nick
     const reason = msg.params[0] || ''
-    usersStore.removeUser(nick)
-    if (settings.showJoinPart) {
-      for (const ch of channels.channels) {
-        messages.addSystemMessage(ch.name, `${nick} has quit${reason ? ` (${reason})` : ''}`)
+    // Only post quit message to channels where the user was present
+    for (const ch of channels.channels) {
+      if (usersStore.hasUser(ch.name, nick)) {
+        usersStore.removeUser(ch.name, nick)
+        if (settings.showJoinPart) {
+          messages.addSystemMessage(ch.name, `${nick} has quit${reason ? ` (${reason})` : ''}`)
+        }
       }
     }
   })
@@ -275,7 +279,9 @@ export function useIRC() {
       connection.setNick(newNick)
     }
     for (const ch of channels.channels) {
-      messages.addSystemMessage(ch.name, `${oldNick} is now known as ${newNick}`)
+      if (usersStore.hasUser(ch.name, newNick)) {
+        messages.addSystemMessage(ch.name, `${oldNick} is now known as ${newNick}`)
+      }
     }
   })
 
@@ -294,21 +300,23 @@ export function useIRC() {
 
   // --- NAMES ---
   on('353', (msg) => {
+    const channel = msg.params[2]
     const names = (msg.params[3] || '').split(' ').filter(Boolean)
     for (const name of names) {
       let n = name
       let op = false, voiced = false
       if (n.startsWith('@')) { op = true; n = n.slice(1) }
       else if (n.startsWith('+')) { voiced = true; n = n.slice(1) }
-      usersStore.addUser(n, { op, voiced })
+      usersStore.addUser(channel, n, { op, voiced })
     }
   })
 
   // --- WHO reply ---
   on('352', (msg) => {
+    const channel = msg.params[1]
     const nick = msg.params[5]
     const flags = msg.params[6] || ''
-    usersStore.addUser(nick, {
+    usersStore.addUser(channel, nick, {
       status: flags.includes('G') ? 'away' : 'online',
       op: flags.includes('@'),
       voiced: flags.includes('+'),
@@ -335,13 +343,13 @@ export function useIRC() {
       if (ch === 'o') {
         const nick = modeArgs[argIdx++]
         if (nick) {
-          usersStore.setOp(nick, adding)
+          usersStore.setOp(target, nick, adding)
           if (nick === client.nick) connection.setOp(adding)
         }
       }
       if (ch === 'v') {
         const nick = modeArgs[argIdx++]
-        if (nick) usersStore.setVoiced(nick, adding)
+        if (nick) usersStore.setVoiced(target, nick, adding)
       }
     }
 
@@ -384,7 +392,7 @@ export function useIRC() {
     if (!_whoisBuffer[nick]) _whoisBuffer[nick] = {}
     const w = _whoisBuffer[nick]
 
-    if (msg.command === '311') { // RPL_WHOISUSER
+    if (msg.command === '311') {
       w.nick = msg.params[1]
       w.user = msg.params[2]
       w.host = msg.params[3]
@@ -397,7 +405,7 @@ export function useIRC() {
     if (msg.command === '330') w.account = msg.params[2]
     if (msg.command === '671') w.secure = true
 
-    if (msg.command === '318') { // RPL_ENDOFWHOIS
+    if (msg.command === '318') {
       const info = _whoisBuffer[nick]
       delete _whoisBuffer[nick]
       const ch = channels.activeChannel
@@ -503,7 +511,6 @@ export function useIRC() {
       case 'msg':
         if (cmd.target && cmd.text) {
           client.privmsg(cmd.target, cmd.text)
-          // Open DM channel
           if (!cmd.target.startsWith('#')) {
             channels.addChannel(cmd.target, 'Direct message')
           }

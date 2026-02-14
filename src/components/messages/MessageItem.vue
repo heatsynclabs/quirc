@@ -1,6 +1,18 @@
 <template>
   <SystemMessage v-if="message.type === 'system'" :time="message.time" :text="message.text" />
   <div
+    v-else-if="message.isAction"
+    class="msg msg--action"
+    :class="{ 'msg--hover': hover }"
+    @mouseenter="hover = true"
+    @mouseleave="hover = false"
+  >
+    <div class="msg__action-text">
+      <span v-if="settings.showTimestamps" class="msg__time">{{ message.time }}</span>
+      * <span class="msg__nick" :style="{ color: nickColor }">{{ message.nick }}</span> {{ message.text }}
+    </div>
+  </div>
+  <div
     v-else
     class="msg"
     :class="{ 'msg--hover': hover }"
@@ -12,7 +24,7 @@
     <ReplyContext v-if="message.replyTo" :nick="message.replyTo.nick" :text="message.replyTo.text" />
 
     <div class="msg__header">
-      <span class="msg__time">{{ message.time }}</span>
+      <span v-if="settings.showTimestamps" class="msg__time">{{ message.time }}</span>
       <span class="msg__nick" :style="{ color: nickColor }">{{ message.nick }}</span>
     </div>
 
@@ -21,13 +33,13 @@
     </div>
 
     <LinkPreview
-      v-if="message.linkPreview"
+      v-if="message.linkPreview && settings.linkPreviews"
       :domain="message.linkPreview.domain"
       :title="message.linkPreview.title"
       :description="message.linkPreview.description"
     />
 
-    <InlineImage v-if="message.hasImage" :url="message.imageUrl" />
+    <InlineImage v-if="message.hasImage && settings.inlineImages" :url="message.imageUrl" />
 
     <Reactions
       v-if="message.reactions?.length"
@@ -56,6 +68,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { getNickColor } from '@/utils/nickColor'
+import { useSettingsStore } from '@/stores/settings'
 import { IconReply, IconPlus } from '@/components/icons'
 import SystemMessage from './SystemMessage.vue'
 import ReplyContext from './ReplyContext.vue'
@@ -71,13 +84,15 @@ const props = defineProps({
 
 const emit = defineEmits(['reply', 'react'])
 
+const settings = useSettingsStore()
 const hover = ref(false)
 const emojiOpen = ref(false)
 let touchTimer = null
 
-const nickColor = computed(() =>
-  props.message.nick ? getNickColor(props.message.nick) : ''
-)
+const nickColor = computed(() => {
+  if (!props.message.nick) return ''
+  return settings.coloredNicks ? getNickColor(props.message.nick) : 'var(--q-text-secondary)'
+})
 
 function onReact(emoji) {
   emit('react', props.message.id, emoji)
@@ -107,6 +122,11 @@ function onTouchEnd() {
 
 .msg--hover {
   background: var(--q-bg-hover);
+}
+
+.msg--action .msg__action-text {
+  font-style: italic;
+  color: var(--q-text-secondary);
 }
 
 .msg__header {

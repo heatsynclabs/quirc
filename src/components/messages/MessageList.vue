@@ -14,8 +14,6 @@
       <div class="msg-list__empty-hint">Join a channel or wait for a connection.</div>
     </div>
 
-    <UnreadMarker v-if="messages.length" />
-
     <MessageItem
       v-for="msg in messages"
       :key="msg.id"
@@ -32,7 +30,6 @@
 <script setup>
 import { ref, watch, nextTick, onMounted } from 'vue'
 import MessageItem from './MessageItem.vue'
-import UnreadMarker from '@/components/shared/UnreadMarker.vue'
 import TypingIndicator from '@/components/shared/TypingIndicator.vue'
 
 const props = defineProps({

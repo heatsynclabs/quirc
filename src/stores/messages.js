@@ -1,6 +1,8 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useChannelsStore } from './channels'
+import { useSettingsStore } from './settings'
+import { formatTime } from '@/utils/time'
 
 export const useMessagesStore = defineStore('messages', () => {
   const messagesByChannel = ref({})
@@ -17,19 +19,31 @@ export const useMessagesStore = defineStore('messages', () => {
     }
   }
 
+  function _trimToLimit(channel) {
+    const settings = useSettingsStore()
+    const max = settings.maxMessagesPerChannel
+    const arr = messagesByChannel.value[channel]
+    if (arr && arr.length > max) {
+      arr.splice(0, arr.length - max)
+    }
+  }
+
   function addMessage(channel, message) {
     ensureChannel(channel)
     messagesByChannel.value[channel].push(message)
+    _trimToLimit(channel)
   }
 
   function addSystemMessage(channel, text) {
+    const settings = useSettingsStore()
     ensureChannel(channel)
     messagesByChannel.value[channel].push({
       id: Date.now() + Math.random(),
       type: 'system',
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      time: formatTime(new Date(), settings.use24hTime),
       text,
     })
+    _trimToLimit(channel)
   }
 
   function addReaction(channel, messageId, emoji) {

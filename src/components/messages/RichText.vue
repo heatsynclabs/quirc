@@ -5,7 +5,12 @@
       <template v-else>
         <template v-for="(seg, j) in part.segments" :key="j">
           <code v-if="seg.type === 'inline'" class="rich-inline">{{ seg.value }}</code>
-          <span v-else>{{ seg.value }}</span>
+          <template v-else-if="seg.type === 'plain'">
+            <template v-for="(frag, k) in seg.fragments" :key="k">
+              <a v-if="frag.type === 'url'" :href="frag.value" target="_blank" rel="noopener" class="rich-link">{{ frag.value }}</a>
+              <span v-else>{{ frag.value }}</span>
+            </template>
+          </template>
         </template>
       </template>
     </template>
@@ -14,11 +19,44 @@
 
 <script setup>
 import { computed } from 'vue'
+import { detectUrls } from '@/utils/linkDetect'
 import CodeBlock from './CodeBlock.vue'
 
 const props = defineProps({
   text: { type: String, required: true },
 })
+
+function splitWithUrls(text) {
+  const urls = detectUrls(text)
+  if (!urls.length) return [{ type: 'text', value: text }]
+
+  const fragments = []
+  let last = 0
+  for (const u of urls) {
+    if (u.start > last) {
+      fragments.push({ type: 'text', value: text.slice(last, u.start) })
+    }
+    fragments.push({ type: 'url', value: u.url })
+    last = u.end
+  }
+  if (last < text.length) {
+    fragments.push({ type: 'text', value: text.slice(last) })
+  }
+  return fragments
+}
+
+function parseInline(text) {
+  const segments = []
+  const parts = text.split(/(`[^`]+`)/g)
+  for (const s of parts) {
+    if (s.startsWith('`') && s.endsWith('`')) {
+      segments.push({ type: 'inline', value: s.slice(1, -1) })
+    } else if (s) {
+      segments.push({ type: 'plain', fragments: splitWithUrls(s) })
+    }
+  }
+  return segments
+}
 
 const parts = computed(() => {
   const result = []
@@ -40,19 +78,6 @@ const parts = computed(() => {
 
   return result
 })
-
-function parseInline(text) {
-  const segments = []
-  const parts = text.split(/(`[^`]+`)/g)
-  for (const s of parts) {
-    if (s.startsWith('`') && s.endsWith('`')) {
-      segments.push({ type: 'inline', value: s.slice(1, -1) })
-    } else if (s) {
-      segments.push({ type: 'plain', value: s })
-    }
-  }
-  return segments
-}
 </script>
 
 <style scoped>
@@ -63,5 +88,14 @@ function parseInline(text) {
   font-size: 12px;
   color: var(--q-accent-orange);
   font-family: var(--q-font-mono);
+}
+
+.rich-link {
+  color: var(--q-accent-teal);
+  text-decoration: none;
+}
+
+.rich-link:hover {
+  text-decoration: underline;
 }
 </style>
