@@ -3,17 +3,20 @@ network:
 
 server:
   name: irc.quirc.chat
+
   listeners:
-    ":6667": {}
-    ":6697":
-      tls:
-        cert: /etc/letsencrypt/live/irc.quirc.chat/fullchain.pem
-        key: /etc/letsencrypt/live/irc.quirc.chat/privkey.pem
-    ":8097":
+    # WebSocket only — App Platform terminates TLS and routes HTTPS here
+    ":8080":
       websocket: true
 
   websocket-origins:
     - "https://quirc.chat"
+    - "https://quirc.netlify.app"
+
+  max-sendq: 96k
+  ip-cloaking:
+    enabled: true
+    netname: quirc
 
 accounts:
   registration:
@@ -21,6 +24,7 @@ accounts:
   authentication-enabled: true
   bouncer:
     enabled: true
+    allowed-by-default: true
 
 history:
   enabled: true

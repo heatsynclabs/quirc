@@ -1,0 +1,36 @@
+# DigitalOcean App Platform Specification
+#
+# Deploy with: doctl apps create --spec deploy/app.yaml
+#
+# Runs Ergo IRC server with WebSocket listener.
+# App Platform terminates TLS — client connects via wss://irc.quirc.chat
+
+name: quirc-irc
+
+services:
+  - name: ergo
+    dockerfile_path: deploy/Dockerfile
+    source_dir: deploy
+    github:
+      repo: virgilvox/quirc
+      branch: main
+      deploy_on_push: true
+
+    http_port: 8080
+
+    instance_count: 1
+    instance_size_slug: basic-xxs
+
+    routes:
+      - path: /
+
+    health_check:
+      http_path: /
+      initial_delay_seconds: 10
+      period_seconds: 30
+      timeout_seconds: 5
+      failure_threshold: 3
+
+domains:
+  - domain: irc.quirc.chat
+    type: PRIMARY
