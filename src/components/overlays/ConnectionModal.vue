@@ -12,8 +12,59 @@
       <div v-if="error" class="conn__error">{{ error }}</div>
 
       <div class="conn__form">
+        <!-- Nickname -->
         <label class="conn__label">NICKNAME</label>
         <input v-model="form.nick" class="conn__input" placeholder="your_nick" @keydown.enter="onConnect" />
+
+        <div class="conn__hint">
+          Pick any name you want. On IRC, nicknames are first-come,
+          first-served -- anyone can use an unclaimed nick.
+        </div>
+
+        <!-- Account section -->
+        <div class="conn__section">ACCOUNT</div>
+
+        <div class="conn__mode-cards">
+          <button
+            class="conn__mode-card"
+            :class="{ 'conn__mode-card--active': !form.useSasl }"
+            @click="form.useSasl = false"
+          >
+            <span class="conn__mode-dot" :class="{ 'conn__mode-dot--on': !form.useSasl }" />
+            <div>
+              <div class="conn__mode-title">Join as guest</div>
+              <div class="conn__mode-desc">
+                Jump right in. You can register your nickname later
+                to reserve it.
+              </div>
+            </div>
+          </button>
+          <button
+            class="conn__mode-card"
+            :class="{ 'conn__mode-card--active': form.useSasl }"
+            @click="form.useSasl = true"
+          >
+            <span class="conn__mode-dot" :class="{ 'conn__mode-dot--on': form.useSasl }" />
+            <div>
+              <div class="conn__mode-title">Sign in</div>
+              <div class="conn__mode-desc">
+                Already registered? Log in with your account to
+                claim your reserved nickname.
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <template v-if="form.useSasl">
+          <label class="conn__label">ACCOUNT NAME</label>
+          <input v-model="form.saslUsername" class="conn__input" placeholder="your registered nickname" />
+
+          <label class="conn__label">PASSWORD</label>
+          <input v-model="form.saslPassword" class="conn__input" type="password" />
+        </template>
+
+        <!-- Server settings -->
+        <div class="conn__section">SERVER</div>
 
         <label class="conn__label">SERVER</label>
         <input v-model="form.serverHost" class="conn__input" placeholder="irc.example.org" />
@@ -21,29 +72,18 @@
         <label class="conn__label">WEBSOCKET URL</label>
         <input v-model="form.gatewayUrl" class="conn__input" placeholder="wss://irc.example.org" />
 
-        <label class="conn__label">PORT</label>
-        <input v-model.number="form.serverPort" class="conn__input conn__input--short" type="number" />
+        <div class="conn__row">
+          <div>
+            <label class="conn__label">PORT</label>
+            <input v-model.number="form.serverPort" class="conn__input conn__input--short" type="number" />
+          </div>
+        </div>
 
         <label class="conn__label">AUTO-JOIN CHANNELS</label>
         <input v-model="autoJoinStr" class="conn__input" placeholder="#general, #random" />
 
         <label class="conn__label">SERVER PASSWORD <span class="conn__opt">(optional)</span></label>
         <input v-model="form.password" class="conn__input" type="password" placeholder="leave blank if none" />
-
-        <div class="conn__toggle-row">
-          <label class="conn__toggle">
-            <input type="checkbox" v-model="form.useSasl" />
-            <span>SASL AUTHENTICATION</span>
-          </label>
-        </div>
-
-        <template v-if="form.useSasl">
-          <label class="conn__label">SASL USERNAME</label>
-          <input v-model="form.saslUsername" class="conn__input" placeholder="account name" />
-
-          <label class="conn__label">SASL PASSWORD</label>
-          <input v-model="form.saslPassword" class="conn__input" type="password" />
-        </template>
       </div>
 
       <div class="conn__actions">
@@ -183,7 +223,7 @@ function loadProfile(s) {
   background: var(--q-bg-primary);
   border: 2px solid var(--q-border-strong);
   padding: 0;
-  max-width: 420px;
+  max-width: 440px;
   width: 92%;
   max-height: 90dvh;
   overflow-y: auto;
@@ -224,6 +264,26 @@ function loadProfile(s) {
   padding: 16px 20px;
 }
 
+.conn__hint {
+  font-size: 11px;
+  color: var(--q-text-dim);
+  line-height: 1.5;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-left: 2px solid var(--q-border-strong);
+}
+
+.conn__section {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--q-text-dim);
+  text-transform: uppercase;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--q-border);
+}
+
 .conn__label {
   display: block;
   font-size: 9px;
@@ -260,23 +320,62 @@ function loadProfile(s) {
   border-color: var(--q-accent-teal);
 }
 
-.conn__toggle-row {
-  margin-top: 14px;
+.conn__row {
+  margin-top: 4px;
 }
 
-.conn__toggle {
+/* Mode cards */
+.conn__mode-cards {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 9px;
-  letter-spacing: 2px;
-  color: var(--q-text-secondary);
-  text-transform: uppercase;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.conn__toggle input {
-  accent-color: var(--q-accent-teal);
+.conn__mode-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--q-border-strong);
+  background: var(--q-bg-secondary);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--q-font-mono);
+  transition: border-color 0.15s;
+}
+
+.conn__mode-card--active {
+  border-color: var(--q-accent-teal);
+}
+
+.conn__mode-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--q-border-strong);
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.15s;
+}
+
+.conn__mode-dot--on {
+  border-color: var(--q-accent-teal);
+  background: var(--q-accent-teal);
+}
+
+.conn__mode-title {
+  font-size: var(--q-font-size-sm);
+  color: var(--q-text-primary);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.conn__mode-desc {
+  font-size: 11px;
+  color: var(--q-text-dim);
+  line-height: 1.4;
 }
 
 .conn__actions {

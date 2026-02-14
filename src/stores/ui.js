@@ -9,6 +9,7 @@ export const useUiStore = defineStore('ui', () => {
   const connectionModalOpen = ref(false)
   const settingsOpen = ref(false)
   const joinChannelOpen = ref(false)
+  const registerNickOpen = ref(false)
   const userContextNick = ref(null) // nick of user whose context menu is open
 
   function toggleChannelDrawer() {
@@ -37,6 +38,7 @@ export const useUiStore = defineStore('ui', () => {
     connectionModalOpen.value = false
     settingsOpen.value = false
     joinChannelOpen.value = false
+    registerNickOpen.value = false
     userContextNick.value = null
   }
 
@@ -48,6 +50,7 @@ export const useUiStore = defineStore('ui', () => {
     connectionModalOpen,
     settingsOpen,
     joinChannelOpen,
+    registerNickOpen,
     userContextNick,
     toggleChannelDrawer,
     toggleUsersDrawer,

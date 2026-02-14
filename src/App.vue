@@ -78,6 +78,11 @@
       @join="onJoinChannel"
     />
 
+    <RegisterNickModal
+      :open="ui.registerNickOpen"
+      @close="ui.registerNickOpen = false"
+    />
+
     <FileUploadToast
       :visible="inputBarRef?.uploading"
       :progress="inputBarRef?.progress ?? 0"
@@ -109,6 +114,7 @@ import SearchOverlay from '@/components/overlays/SearchOverlay.vue'
 import ConnectionModal from '@/components/overlays/ConnectionModal.vue'
 import SettingsPanel from '@/components/overlays/SettingsPanel.vue'
 import JoinChannelModal from '@/components/overlays/JoinChannelModal.vue'
+import RegisterNickModal from '@/components/overlays/RegisterNickModal.vue'
 import FileUploadToast from '@/components/overlays/FileUploadToast.vue'
 
 const ui = useUiStore()
@@ -275,6 +281,7 @@ function onOpenDM(nick) {
 // Global keyboard shortcuts
 function onGlobalKeydown(e) {
   if (e.key === 'Escape') {
+    if (ui.registerNickOpen) { ui.registerNickOpen = false; return }
     if (ui.searchOpen) { ui.searchOpen = false; return }
     if (ui.settingsOpen) { ui.settingsOpen = false; return }
     if (ui.joinChannelOpen) { ui.joinChannelOpen = false; return }

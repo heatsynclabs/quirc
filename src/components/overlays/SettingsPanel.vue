@@ -70,6 +70,7 @@
         </div>
 
         <div class="settings__actions">
+          <button class="settings__btn settings__btn--accent" @click="openRegister">REGISTER NICKNAME</button>
           <button class="settings__btn" @click="openConnect">EDIT CONNECTION</button>
           <button class="settings__btn settings__btn--danger" @click="onClearData">CLEAR ALL DATA</button>
         </div>
@@ -111,6 +112,11 @@ const ui = useUiStore()
 function openConnect() {
   emit('close')
   ui.connectionModalOpen = true
+}
+
+function openRegister() {
+  emit('close')
+  ui.registerNickOpen = true
 }
 
 function onClearData() {
@@ -283,6 +289,18 @@ function onClearData() {
 .settings__btn:hover {
   border-color: var(--q-accent-teal);
   color: var(--q-accent-teal);
+}
+
+.settings__btn--accent {
+  background: var(--q-accent-teal);
+  color: #000;
+  border: none;
+}
+
+.settings__btn--accent:hover {
+  opacity: 0.9;
+  color: #000;
+  border: none;
 }
 
 .settings__btn--danger:hover {
