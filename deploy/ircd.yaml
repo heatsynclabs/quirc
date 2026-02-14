@@ -16,6 +16,7 @@ server:
     - "https://quirc.chat"
     - "https://quirc.netlify.app"
 
+  enforce-utf8: true
   max-sendq: 96k
   ip-cloaking:
     enabled: true
