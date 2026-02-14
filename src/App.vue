@@ -415,18 +415,21 @@ function onGlobalKeydown(e) {
 function updateAppHeight() {
   const vh = window.visualViewport?.height ?? window.innerHeight
   document.documentElement.style.setProperty('--app-height', `${vh}px`)
+  window.scrollTo(0, 0)
 }
 
 onMounted(() => {
   window.addEventListener('keydown', onGlobalKeydown)
   updateAppHeight()
   window.visualViewport?.addEventListener('resize', updateAppHeight)
+  window.visualViewport?.addEventListener('scroll', updateAppHeight)
   window.addEventListener('resize', updateAppHeight)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
   window.visualViewport?.removeEventListener('resize', updateAppHeight)
+  window.visualViewport?.removeEventListener('scroll', updateAppHeight)
   window.removeEventListener('resize', updateAppHeight)
   client.off('typing', _onTyping)
   client.off('PRIVMSG', _onNotifyPrivmsg)

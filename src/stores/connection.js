@@ -37,10 +37,10 @@ export const useConnectionStore = defineStore('connection', () => {
   const saslPassword = ref(saved.saslPassword || '')
 
   // Server config — env defaults always fill in when localStorage is empty
-  const serverHost = ref(saved.serverHost || env('VITE_DEFAULT_SERVER'))
+  const serverHost = ref(saved.serverHost || env('VITE_DEFAULT_SERVER') || 'irc.quirc.chat')
   const serverPort = ref(saved.serverPort || Number(env('VITE_DEFAULT_PORT', '6697')))
-  const gatewayUrl = ref(saved.gatewayUrl || env('VITE_GATEWAY_URL'))
-  const autoJoinChannels = ref(saved.autoJoinChannels || parseAutoJoin(env('VITE_AUTO_JOIN', '#general')))
+  const gatewayUrl = ref(saved.gatewayUrl || env('VITE_GATEWAY_URL') || 'wss://irc.quirc.chat')
+  const autoJoinChannels = ref(saved.autoJoinChannels || parseAutoJoin(env('VITE_AUTO_JOIN', '#general,#random')))
 
   // Runtime info
   const isOp = ref(false)

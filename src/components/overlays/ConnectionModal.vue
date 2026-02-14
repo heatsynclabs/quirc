@@ -161,10 +161,10 @@
 
           <div v-if="serverOpen" class="conn__server">
             <label class="conn__label">SERVER HOST</label>
-            <input v-model="form.serverHost" class="conn__input" placeholder="irc.example.org" />
+            <input v-model="form.serverHost" class="conn__input" placeholder="irc.quirc.chat" />
 
             <label class="conn__label">WEBSOCKET URL</label>
-            <input v-model="form.gatewayUrl" class="conn__input" placeholder="wss://irc.example.org" />
+            <input v-model="form.gatewayUrl" class="conn__input" placeholder="wss://irc.quirc.chat" />
 
             <div class="conn__inline-row">
               <div class="conn__inline-field">
