@@ -245,8 +245,8 @@ function _onNotifyPrivmsg(msg) {
 }
 client.on('PRIVMSG', _onNotifyPrivmsg)
 
-function onConnect() {
-  ui.connectionModalOpen = false
+function onConnect({ keepOpen } = {}) {
+  if (!keepOpen) ui.connectionModalOpen = false
   irc.connect()
 }
 
