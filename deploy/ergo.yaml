@@ -1,0 +1,37 @@
+network:
+  name: QuircIRC
+
+server:
+  name: irc.quirc.chat
+  listeners:
+    ":6667": {}
+    ":6697":
+      tls:
+        cert: /etc/letsencrypt/live/irc.quirc.chat/fullchain.pem
+        key: /etc/letsencrypt/live/irc.quirc.chat/privkey.pem
+    ":8097":
+      websocket: true
+
+  websocket-origins:
+    - "https://quirc.chat"
+
+accounts:
+  registration:
+    enabled: true
+  authentication-enabled: true
+  bouncer:
+    enabled: true
+
+history:
+  enabled: true
+  channel-length: 10000
+  client-length: 1000
+  chathistory-maxmessages: 1000
+  retention:
+    allow-individual-delete: false
+    cutoff: 168h
+
+channels:
+  default-modes: "+nt"
+  registration:
+    enabled: true

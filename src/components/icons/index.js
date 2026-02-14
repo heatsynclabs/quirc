@@ -1,0 +1,8 @@
+export { default as IconHamburger } from './IconHamburger.vue'
+export { default as IconSearch } from './IconSearch.vue'
+export { default as IconClose } from './IconClose.vue'
+export { default as IconReply } from './IconReply.vue'
+export { default as IconPlus } from './IconPlus.vue'
+export { default as IconPaperclip } from './IconPaperclip.vue'
+export { default as IconSend } from './IconSend.vue'
+export { default as IconSettings } from './IconSettings.vue'

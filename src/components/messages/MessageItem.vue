@@ -1,0 +1,162 @@
+<template>
+  <SystemMessage v-if="message.type === 'system'" :time="message.time" :text="message.text" />
+  <div
+    v-else
+    class="msg"
+    :class="{ 'msg--hover': hover }"
+    @mouseenter="hover = true"
+    @mouseleave="hover = false; emojiOpen = false"
+    @touchstart="onTouchStart"
+    @touchend="onTouchEnd"
+  >
+    <ReplyContext v-if="message.replyTo" :nick="message.replyTo.nick" :text="message.replyTo.text" />
+
+    <div class="msg__header">
+      <span class="msg__time">{{ message.time }}</span>
+      <span class="msg__nick" :style="{ color: nickColor }">{{ message.nick }}</span>
+    </div>
+
+    <div class="msg__body">
+      <RichText :text="message.text" />
+    </div>
+
+    <LinkPreview
+      v-if="message.linkPreview"
+      :domain="message.linkPreview.domain"
+      :title="message.linkPreview.title"
+      :description="message.linkPreview.description"
+    />
+
+    <InlineImage v-if="message.hasImage" :url="message.imageUrl" />
+
+    <Reactions
+      v-if="message.reactions?.length"
+      :reactions="message.reactions"
+      @react="onReact"
+    />
+
+    <!-- Hover actions -->
+    <div v-if="hover" class="msg__actions">
+      <button class="msg__action-btn" @click="$emit('reply', message)">
+        <IconReply :size="14" />
+      </button>
+      <div class="msg__emoji-wrap">
+        <button class="msg__action-btn" @click="emojiOpen = !emojiOpen">
+          <IconPlus :size="14" />
+        </button>
+        <EmojiPicker
+          v-if="emojiOpen"
+          @pick="onEmojiPick"
+        />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+import { getNickColor } from '@/utils/nickColor'
+import { IconReply, IconPlus } from '@/components/icons'
+import SystemMessage from './SystemMessage.vue'
+import ReplyContext from './ReplyContext.vue'
+import RichText from './RichText.vue'
+import LinkPreview from './LinkPreview.vue'
+import InlineImage from './InlineImage.vue'
+import Reactions from './Reactions.vue'
+import EmojiPicker from '@/components/overlays/EmojiPicker.vue'
+
+const props = defineProps({
+  message: { type: Object, required: true },
+})
+
+const emit = defineEmits(['reply', 'react'])
+
+const hover = ref(false)
+const emojiOpen = ref(false)
+let touchTimer = null
+
+const nickColor = computed(() =>
+  props.message.nick ? getNickColor(props.message.nick) : ''
+)
+
+function onReact(emoji) {
+  emit('react', props.message.id, emoji)
+}
+
+function onEmojiPick(emoji) {
+  emit('react', props.message.id, emoji)
+  emojiOpen.value = false
+}
+
+function onTouchStart() {
+  touchTimer = setTimeout(() => { hover.value = true }, 400)
+}
+
+function onTouchEnd() {
+  clearTimeout(touchTimer)
+}
+</script>
+
+<style scoped>
+.msg {
+  padding: 6px 16px;
+  font-size: var(--q-font-size-base);
+  line-height: 1.5;
+  position: relative;
+}
+
+.msg--hover {
+  background: var(--q-bg-hover);
+}
+
+.msg__header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.msg__time {
+  color: var(--q-text-dim);
+  font-size: var(--q-font-size-xs);
+  flex-shrink: 0;
+}
+
+.msg__nick {
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.msg__body {
+  color: var(--q-text-primary);
+  margin-top: 1px;
+}
+
+.msg__actions {
+  position: absolute;
+  top: 4px;
+  right: 12px;
+  display: flex;
+  gap: 2px;
+}
+
+.msg__action-btn {
+  background: var(--q-bg-elevated);
+  border: 1px solid var(--q-border-strong);
+  color: var(--q-text-secondary);
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: var(--q-font-size-xs);
+  font-family: var(--q-font-mono);
+  display: flex;
+  align-items: center;
+}
+
+.msg__action-btn:hover {
+  border-color: var(--q-text-muted);
+}
+
+.msg__emoji-wrap {
+  position: relative;
+}
+</style>

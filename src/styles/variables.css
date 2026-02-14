@@ -1,0 +1,61 @@
+:root {
+  /* Backgrounds */
+  --q-bg-primary: #0a0a0a;
+  --q-bg-secondary: #0f0f0f;
+  --q-bg-elevated: #141414;
+  --q-bg-hover: #111111;
+
+  /* Borders */
+  --q-border: #1a1a1a;
+  --q-border-strong: #2a2a2a;
+  --q-border-dashed: #2a2a2a;
+
+  /* Text */
+  --q-text-primary: #cccccc;
+  --q-text-secondary: #999999;
+  --q-text-muted: #555555;
+  --q-text-dim: #444444;
+  --q-text-ghost: #333333;
+
+  /* Accents - from mockup palette */
+  --q-accent-teal: #08D9D6;
+  --q-accent-orange: #e85d3b;
+  --q-accent-gold: #f0c040;
+  --q-accent-pink: #FF2E63;
+  --q-accent-acid: #EAFF00;
+  --q-accent-green: #6bcb77;
+  --q-accent-blue: #4d96ff;
+  --q-accent-purple: #cc5de8;
+
+  /* Nick colors */
+  --q-nick-1: #e85d3b;
+  --q-nick-2: #f0c040;
+  --q-nick-3: #6bcb77;
+  --q-nick-4: #4d96ff;
+  --q-nick-5: #ff922b;
+  --q-nick-6: #cc5de8;
+  --q-nick-7: #20c997;
+  --q-nick-8: #ff6b9d;
+  --q-nick-9: #a9e34b;
+  --q-nick-10: #748ffc;
+
+  /* Typography */
+  --q-font-mono: 'Space Mono', 'Courier New', monospace;
+  --q-font-size-xs: 10px;
+  --q-font-size-sm: 11px;
+  --q-font-size-base: 13px;
+  --q-font-size-md: 14px;
+  --q-font-size-lg: 16px;
+
+  /* Spacing */
+  --q-spacing-xs: 4px;
+  --q-spacing-sm: 8px;
+  --q-spacing-md: 12px;
+  --q-spacing-lg: 16px;
+  --q-spacing-xl: 20px;
+
+  /* Layout */
+  --q-topbar-height: 52px;
+  --q-drawer-width: 280px;
+  --q-users-drawer-width: 240px;
+}
