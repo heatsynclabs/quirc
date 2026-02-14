@@ -1,5 +1,5 @@
 <template>
-  <div class="splash" :class="{ 'splash--out': phase === 'out' }">
+  <div class="splash" :class="{ 'splash--out': phase === 'out' }" @click="skip" @keydown="skip" tabindex="0" ref="splashRef">
     <!-- Scanline sweep -->
     <div class="splash__scanline" :class="{ 'splash__scanline--visible': phase === 'logo' }" />
 
@@ -46,7 +46,18 @@ const emit = defineEmits(['done'])
 const connection = useConnectionStore()
 
 const phase = ref('logo')
+const splashRef = ref(null)
 let t1, t2, t3
+let skipped = false
+
+function skip() {
+  if (skipped) return
+  skipped = true
+  clearTimeout(t1)
+  clearTimeout(t2)
+  clearTimeout(t3)
+  emit('done')
+}
 
 const statusText = computed(() => {
   if (connection.isConfigured) {
@@ -56,6 +67,7 @@ const statusText = computed(() => {
 })
 
 onMounted(() => {
+  splashRef.value?.focus()
   t1 = setTimeout(() => { phase.value = 'text' }, 1800)
   t2 = setTimeout(() => { phase.value = 'out' }, 3400)
   t3 = setTimeout(() => { emit('done') }, 4000)
@@ -80,6 +92,8 @@ onUnmounted(() => {
   font-family: var(--q-font-mono);
   opacity: 1;
   transition: opacity 0.5s ease;
+  cursor: pointer;
+  outline: none;
 }
 
 .splash--out {

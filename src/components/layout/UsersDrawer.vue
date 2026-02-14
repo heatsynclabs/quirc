@@ -14,6 +14,7 @@
           :class="{
             'us-drawer__user--away': u.status === 'away',
             'us-drawer__user--off': u.status === 'offline',
+            'us-drawer__user--self': u.nick === myNick,
           }"
           @click="selectUser(u)"
         >
@@ -25,7 +26,7 @@
               'us-drawer__dot--off': u.status === 'offline',
             }"
           />
-          <span class="us-drawer__nick" :style="{ color: getNickColor(u.nick) }">{{ u.op ? '@' : '' }}{{ u.nick }}</span>
+          <span class="us-drawer__nick" :style="{ color: getNickColor(u.nick) }">{{ u.op ? '@' : '' }}{{ u.nick }}<span v-if="u.nick === myNick" class="us-drawer__you"> (you)</span></span>
         </div>
       </div>
 
@@ -35,13 +36,21 @@
           <span class="us-drawer__actions-nick" :style="{ color: getNickColor(selectedUser.nick) }">
             {{ selectedUser.op ? '@' : '' }}{{ selectedUser.nick }}
           </span>
-          <button class="us-drawer__actions-x" @click="selectedUser = null">
+          <button class="us-drawer__actions-x" aria-label="Close user actions" @click="selectedUser = null">
             <IconClose :size="14" color="var(--q-text-muted)" />
           </button>
         </div>
-        <button class="us-drawer__action" @click="onWhois">WHOIS</button>
-        <button class="us-drawer__action" @click="onDM">DIRECT MESSAGE</button>
-        <button v-if="isOp && selectedUser.nick !== myNick" class="us-drawer__action us-drawer__action--danger" @click="onKick">KICK</button>
+        <button class="us-drawer__action" @click="onWhois" title="Look up this user's info">WHOIS</button>
+        <button class="us-drawer__action" @click="onDM" title="Start a private conversation">DIRECT MESSAGE</button>
+        <template v-if="isOp && selectedUser.nick !== myNick">
+          <button v-if="!selectedUser.op" class="us-drawer__action" @click="onGiveOp" title="Give this user operator status">GIVE OP</button>
+          <button v-if="selectedUser.op" class="us-drawer__action" @click="onRemoveOp" title="Remove operator status from this user">REMOVE OP</button>
+          <button v-if="!selectedUser.voiced" class="us-drawer__action" @click="onGiveVoice" title="Allow this user to speak in moderated channels">GIVE VOICE</button>
+          <button v-if="selectedUser.voiced" class="us-drawer__action" @click="onRemoveVoice" title="Remove voice from this user">REMOVE VOICE</button>
+          <button class="us-drawer__action" @click="onInvite" title="Invite this user to the current channel">INVITE</button>
+          <button class="us-drawer__action us-drawer__action--danger" @click="onKick" title="Remove this user from the channel">KICK</button>
+          <button class="us-drawer__action us-drawer__action--danger" @click="onBan" title="Ban and remove this user from the channel">BAN</button>
+        </template>
       </div>
     </div>
   </div>
@@ -88,9 +97,53 @@ function onDM() {
   }
 }
 
+function onGiveOp() {
+  if (selectedUser.value && channels.activeChannel) {
+    client.mode(channels.activeChannel, `+o ${selectedUser.value.nick}`)
+    selectedUser.value = null
+  }
+}
+
+function onRemoveOp() {
+  if (selectedUser.value && channels.activeChannel) {
+    client.mode(channels.activeChannel, `-o ${selectedUser.value.nick}`)
+    selectedUser.value = null
+  }
+}
+
+function onGiveVoice() {
+  if (selectedUser.value && channels.activeChannel) {
+    client.mode(channels.activeChannel, `+v ${selectedUser.value.nick}`)
+    selectedUser.value = null
+  }
+}
+
+function onRemoveVoice() {
+  if (selectedUser.value && channels.activeChannel) {
+    client.mode(channels.activeChannel, `-v ${selectedUser.value.nick}`)
+    selectedUser.value = null
+  }
+}
+
+function onInvite() {
+  if (selectedUser.value && channels.activeChannel) {
+    client.invite(selectedUser.value.nick, channels.activeChannel)
+    selectedUser.value = null
+  }
+}
+
 function onKick() {
   if (selectedUser.value && channels.activeChannel) {
     client.kick(channels.activeChannel, selectedUser.value.nick)
+    selectedUser.value = null
+  }
+}
+
+function onBan() {
+  if (selectedUser.value && channels.activeChannel) {
+    const nick = selectedUser.value.nick
+    client.ban(channels.activeChannel, `${nick}!*@*`)
+    client.kick(channels.activeChannel, nick, 'Banned')
     selectedUser.value = null
   }
 }
@@ -170,8 +223,18 @@ function onKick() {
   cursor: pointer;
 }
 
-.us-drawer__user:hover {
+.us-drawer__user:hover:not(.us-drawer__user--self) {
   background: var(--q-bg-hover);
+}
+
+.us-drawer__user--self {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.us-drawer__you {
+  color: var(--q-text-dim);
+  font-size: var(--q-font-size-xs);
 }
 
 .us-drawer__user--away {

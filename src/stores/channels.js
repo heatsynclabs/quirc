@@ -31,7 +31,8 @@ export const useChannelsStore = defineStore('channels', () => {
 
   function addChannel(name, topic = '') {
     if (!channels.value.find(c => c.name === name)) {
-      channels.value.push({ name, unread: 0, topic, modes: '' })
+      channels.value.push({ name, unread: 0, topic, modes: {}, banList: [] })
+      if (!name.startsWith('#')) persist()
     }
   }
 
@@ -42,6 +43,7 @@ export const useChannelsStore = defineStore('channels', () => {
     } else if (!channels.value.length) {
       activeChannel.value = ''
     }
+    if (!name.startsWith('#')) persist()
   }
 
   function setTopic(name, topic) {
@@ -52,6 +54,22 @@ export const useChannelsStore = defineStore('channels', () => {
   function setModes(name, modes) {
     const ch = channels.value.find(c => c.name === name)
     if (ch) ch.modes = modes
+  }
+
+  function updateMode(name, mode, adding, param) {
+    const ch = channels.value.find(c => c.name === name)
+    if (!ch) return
+    if (!ch.modes || typeof ch.modes === 'string') ch.modes = {}
+    if (adding) {
+      ch.modes[mode] = param || true
+    } else {
+      delete ch.modes[mode]
+    }
+  }
+
+  function setBanList(name, bans) {
+    const ch = channels.value.find(c => c.name === name)
+    if (ch) ch.banList = bans
   }
 
   function incrementUnread(name) {
@@ -74,10 +92,18 @@ export const useChannelsStore = defineStore('channels', () => {
   }
 
   function persist() {
+    const dmNames = channels.value
+      .filter(c => !c.name.startsWith('#'))
+      .map(c => c.name)
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       lastActive: activeChannel.value,
       mutedChannels: mutedChannels.value,
+      savedDMs: dmNames,
     }))
+  }
+
+  function getSavedDMs() {
+    return saved.savedDMs || []
   }
 
   return {
@@ -91,9 +117,12 @@ export const useChannelsStore = defineStore('channels', () => {
     removeChannel,
     setTopic,
     setModes,
+    updateMode,
+    setBanList,
     incrementUnread,
     toggleMute,
     isMuted,
     persist,
+    getSavedDMs,
   }
 })

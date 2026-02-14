@@ -10,7 +10,12 @@ export const useUiStore = defineStore('ui', () => {
   const settingsOpen = ref(false)
   const joinChannelOpen = ref(false)
   const registerNickOpen = ref(false)
+  const channelInfoOpen = ref(false)
+  const channelDiscoveryOpen = ref(false)
+  const helpOpen = ref(false)
   const userContextNick = ref(null) // nick of user whose context menu is open
+  const whoisCardOpen = ref(false)
+  const whoisData = ref(null)
 
   function toggleChannelDrawer() {
     channelDrawerOpen.value = !channelDrawerOpen.value
@@ -30,6 +35,16 @@ export const useUiStore = defineStore('ui', () => {
     userContextNick.value = nick
   }
 
+  function openWhoisCard(data) {
+    whoisData.value = data
+    whoisCardOpen.value = true
+  }
+
+  function closeWhoisCard() {
+    whoisCardOpen.value = false
+    whoisData.value = null
+  }
+
   function closeAll() {
     channelDrawerOpen.value = false
     usersDrawerOpen.value = false
@@ -39,7 +54,12 @@ export const useUiStore = defineStore('ui', () => {
     settingsOpen.value = false
     joinChannelOpen.value = false
     registerNickOpen.value = false
+    channelInfoOpen.value = false
+    channelDiscoveryOpen.value = false
+    helpOpen.value = false
     userContextNick.value = null
+    whoisCardOpen.value = false
+    whoisData.value = null
   }
 
   return {
@@ -51,11 +71,18 @@ export const useUiStore = defineStore('ui', () => {
     settingsOpen,
     joinChannelOpen,
     registerNickOpen,
+    channelInfoOpen,
+    channelDiscoveryOpen,
+    helpOpen,
     userContextNick,
+    whoisCardOpen,
+    whoisData,
     toggleChannelDrawer,
     toggleUsersDrawer,
     toggleSearch,
     openUserContext,
+    openWhoisCard,
+    closeWhoisCard,
     closeAll,
   }
 })

@@ -14,27 +14,65 @@
       <!-- Channels -->
       <div class="ch-drawer__list">
         <div class="ch-drawer__label-row">
-          <span class="ch-drawer__label">channels</span>
-          <button class="ch-drawer__add" title="Join channel" @click="$emit('joinChannel')">+</button>
+          <button class="ch-drawer__toggle" @click="channelsCollapsed = !channelsCollapsed">
+            <span class="ch-drawer__arrow" :class="{ 'ch-drawer__arrow--collapsed': channelsCollapsed }">&#x25BC;</span>
+            <span class="ch-drawer__label">channels</span>
+          </button>
+          <div class="ch-drawer__label-actions">
+            <button class="ch-drawer__add" title="Browse channels" aria-label="Browse channels" @click="$emit('browseChannels')">&#x2630;</button>
+            <button class="ch-drawer__add" title="Join channel" aria-label="Join channel" @click="$emit('joinChannel')">+</button>
+          </div>
         </div>
-        <div
-          v-for="ch in channels"
-          :key="ch.name"
-          class="ch-drawer__item"
-          :class="{ 'ch-drawer__item--active': ch.name === active }"
-          @click="$emit('pick', ch.name); $emit('close')"
-          @contextmenu.prevent="onContext(ch.name)"
-        >
-          <span class="ch-drawer__name" :class="{ 'ch-drawer__name--active': ch.name === active }">{{ ch.name }}</span>
-          <span v-if="ch.unread > 0" class="ch-drawer__badge">{{ ch.unread }}</span>
-        </div>
+        <template v-if="!channelsCollapsed">
+          <div v-if="!ircChannels.length" class="ch-drawer__empty">
+            No channels joined yet
+          </div>
+          <div
+            v-for="ch in ircChannels"
+            :key="ch.name"
+            class="ch-drawer__item"
+            :class="{ 'ch-drawer__item--active': ch.name === active }"
+            @click="$emit('pick', ch.name); $emit('close')"
+            @contextmenu.prevent="onContext(ch.name, $event)"
+          >
+            <span class="ch-drawer__name" :class="{ 'ch-drawer__name--active': ch.name === active }">{{ ch.name }}</span>
+            <span v-if="ch.unread > 0" class="ch-drawer__badge">{{ ch.unread }}</span>
+            <button class="ch-drawer__close" aria-label="Leave channel" @click.stop="onCloseChannel(ch.name)">&times;</button>
+          </div>
+        </template>
+
+        <!-- DMs -->
+        <template v-if="dmChannels.length">
+          <div class="ch-drawer__label-row ch-drawer__label-row--dm">
+            <button class="ch-drawer__toggle" @click="dmsCollapsed = !dmsCollapsed">
+              <span class="ch-drawer__arrow" :class="{ 'ch-drawer__arrow--collapsed': dmsCollapsed }">&#x25BC;</span>
+              <span class="ch-drawer__label">direct messages</span>
+            </button>
+          </div>
+          <template v-if="!dmsCollapsed">
+            <div
+              v-for="ch in dmChannels"
+              :key="ch.name"
+              class="ch-drawer__item ch-drawer__item--dm"
+              :class="{ 'ch-drawer__item--active': ch.name === active }"
+              @click="$emit('pick', ch.name); $emit('close')"
+              @contextmenu.prevent="onContext(ch.name, $event)"
+            >
+              <span class="ch-drawer__name ch-drawer__name--dm" :class="{ 'ch-drawer__name--active': ch.name === active }">{{ ch.name }}</span>
+              <span v-if="ch.unread > 0" class="ch-drawer__badge">{{ ch.unread }}</span>
+              <button class="ch-drawer__close" aria-label="Close DM" @click.stop="onCloseChannel(ch.name)">&times;</button>
+            </div>
+          </template>
+        </template>
       </div>
 
       <!-- Context menu -->
-      <div v-if="contextChannel" class="ch-drawer__context" :style="contextStyle">
+      <div v-if="contextChannel" class="ch-drawer__context">
         <div class="ch-drawer__ctx-backdrop" @click="contextChannel = null" />
-        <div class="ch-drawer__ctx-menu">
-          <button class="ch-drawer__ctx-item" @click="onLeave">LEAVE CHANNEL</button>
+        <div class="ch-drawer__ctx-menu" :style="contextStyle">
+          <button class="ch-drawer__ctx-item" @click="onLeave">
+            {{ contextChannel.startsWith('#') ? 'LEAVE CHANNEL' : 'CLOSE' }}
+          </button>
           <button class="ch-drawer__ctx-item" @click="onMute">{{ isMuted ? 'UNMUTE' : 'MUTE' }}</button>
         </div>
       </div>
@@ -44,7 +82,7 @@
         <div class="ch-drawer__status-dot" :class="'ch-drawer__status-dot--' + connectionStatus" />
         <span class="ch-drawer__nick">{{ nick }}</span>
         <span v-if="isOp" class="ch-drawer__op">@op</span>
-        <button class="ch-drawer__settings" @click="$emit('openSettings')">
+        <button class="ch-drawer__settings" aria-label="Open settings" @click="$emit('openSettings')">
           <IconSettings :size="16" color="var(--q-text-muted)" />
         </button>
       </div>
@@ -70,26 +108,48 @@ const props = defineProps({
   connectionStatus: { type: String, default: 'disconnected' },
 })
 
-defineEmits(['close', 'pick', 'joinChannel', 'openSettings'])
+defineEmits(['close', 'pick', 'joinChannel', 'openSettings', 'browseChannels'])
 
 const channelsStore = useChannelsStore()
 const client = getClient()
 const contextChannel = ref(null)
 const contextStyle = ref({})
+const channelsCollapsed = ref(false)
+const dmsCollapsed = ref(false)
+
+const ircChannels = computed(() => props.channels.filter(c => c.name.startsWith('#')))
+const dmChannels = computed(() => props.channels.filter(c => !c.name.startsWith('#')))
 
 const isMuted = computed(() =>
   contextChannel.value ? channelsStore.isMuted(contextChannel.value) : false
 )
 
-function onContext(name) {
+function onContext(name, event) {
   contextChannel.value = name
+  // Position context menu near click point, clamped to viewport
+  const menuW = 200, menuH = 100
+  const x = Math.min(event.clientX, window.innerWidth - menuW - 8)
+  const y = Math.min(event.clientY, window.innerHeight - menuH - 8)
+  contextStyle.value = { top: `${y}px`, left: `${x}px` }
+}
+
+function onCloseChannel(name) {
+  if (name.startsWith('#')) {
+    client.part(name)
+  } else {
+    channelsStore.removeChannel(name)
+  }
 }
 
 function onLeave() {
   const ch = contextChannel.value
   contextChannel.value = null
-  if (ch) {
+  if (!ch) return
+  if (ch.startsWith('#')) {
     client.part(ch)
+  } else {
+    // DM: just remove from sidebar without sending PART
+    channelsStore.removeChannel(ch)
   }
 }
 
@@ -176,11 +236,36 @@ function onMute() {
   justify-content: space-between;
 }
 
+.ch-drawer__toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ch-drawer__arrow {
+  font-size: 10px;
+  color: var(--q-text-dim);
+  transition: transform 0.15s;
+}
+
+.ch-drawer__arrow--collapsed {
+  transform: rotate(-90deg);
+}
+
 .ch-drawer__label {
   font-size: var(--q-font-size-xs);
   letter-spacing: 3px;
   color: var(--q-text-dim);
   text-transform: uppercase;
+}
+
+.ch-drawer__label-actions {
+  display: flex;
+  gap: 4px;
 }
 
 .ch-drawer__add {
@@ -200,6 +285,18 @@ function onMute() {
 .ch-drawer__add:hover {
   border-color: var(--q-accent-teal);
   color: var(--q-accent-teal);
+}
+
+.ch-drawer__empty {
+  padding: 12px 16px;
+  color: var(--q-text-dim);
+  font-size: var(--q-font-size-sm);
+}
+
+.ch-drawer__label-row--dm {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--q-border);
 }
 
 .ch-drawer__item {
@@ -225,6 +322,37 @@ function onMute() {
   color: #fff;
 }
 
+.ch-drawer__name--dm {
+  color: var(--q-text-muted);
+}
+
+.ch-drawer__close {
+  background: none;
+  border: none;
+  color: var(--q-text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  opacity: 0;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.ch-drawer__item:hover .ch-drawer__close {
+  opacity: 1;
+}
+
+.ch-drawer__close:hover {
+  color: var(--q-accent-pink);
+}
+
+@media (hover: none) {
+  .ch-drawer__close {
+    opacity: 0.5;
+  }
+}
+
 .ch-drawer__badge {
   background: var(--q-accent-orange);
   color: #000;
@@ -245,13 +373,11 @@ function onMute() {
 }
 
 .ch-drawer__ctx-menu {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: fixed;
   background: var(--q-bg-primary);
   border: 2px solid var(--q-border-strong);
   min-width: 180px;
+  z-index: 151;
 }
 
 .ch-drawer__ctx-item {
@@ -334,5 +460,29 @@ function onMute() {
 @keyframes qBlink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+/* Desktop: pinned sidebar */
+@media (min-width: 768px) {
+  .ch-drawer {
+    position: static;
+    pointer-events: auto;
+    z-index: auto;
+    height: 100%;
+    flex-shrink: 0;
+  }
+
+  .ch-drawer__backdrop {
+    display: none;
+  }
+
+  .ch-drawer__panel {
+    position: relative;
+    transform: none;
+    transition: none;
+    width: var(--q-drawer-width);
+    height: 100%;
+    flex-shrink: 0;
+  }
 }
 </style>

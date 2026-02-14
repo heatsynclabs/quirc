@@ -1,5 +1,5 @@
 <template>
-  <SystemMessage v-if="message.type === 'system'" :time="message.time" :text="message.text" />
+  <SystemMessage v-if="message.type === 'system'" :time="message.time" :text="message.text" :subtype="message.subtype" />
   <div
     v-else-if="message.isAction"
     class="msg msg--action"

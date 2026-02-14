@@ -82,9 +82,6 @@ export async function handler(event) {
       Key: key,
       ContentType: contentType,
       ACL: 'public-read',
-      Conditions: [
-        ['content-length-range', 0, MAX_FILE_SIZE],
-      ],
     }),
     { expiresIn: 300 }
   )

@@ -13,6 +13,14 @@ function save(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
 }
 
+function env(key, fallback = '') {
+  return import.meta.env[key] || fallback
+}
+
+function parseAutoJoin(str) {
+  return (str || '#general').split(',').map(s => s.trim()).filter(Boolean)
+}
+
 export const useConnectionStore = defineStore('connection', () => {
   const saved = loadSaved()
 
@@ -20,7 +28,7 @@ export const useConnectionStore = defineStore('connection', () => {
   const status = ref('disconnected') // connecting | connected | registered | disconnected | error
   const errorMessage = ref('')
 
-  // User config (persisted)
+  // User config (persisted) — localStorage wins, no env fallback for user prefs
   const nick = ref(saved.nick || '')
   const password = ref(saved.password || '')
   const realname = ref(saved.realname || 'QUIRC User')
@@ -28,11 +36,11 @@ export const useConnectionStore = defineStore('connection', () => {
   const saslUsername = ref(saved.saslUsername || '')
   const saslPassword = ref(saved.saslPassword || '')
 
-  // Server config (persisted)
-  const serverHost = ref(saved.serverHost || import.meta.env.VITE_DEFAULT_SERVER || '')
-  const serverPort = ref(saved.serverPort || Number(import.meta.env.VITE_DEFAULT_PORT) || 6697)
-  const gatewayUrl = ref(saved.gatewayUrl || import.meta.env.VITE_GATEWAY_URL || '')
-  const autoJoinChannels = ref(saved.autoJoinChannels || (import.meta.env.VITE_AUTO_JOIN || '#general').split(',').map(s => s.trim()).filter(Boolean))
+  // Server config — env defaults always fill in when localStorage is empty
+  const serverHost = ref(saved.serverHost || env('VITE_DEFAULT_SERVER'))
+  const serverPort = ref(saved.serverPort || Number(env('VITE_DEFAULT_PORT', '6697')))
+  const gatewayUrl = ref(saved.gatewayUrl || env('VITE_GATEWAY_URL'))
+  const autoJoinChannels = ref(saved.autoJoinChannels || parseAutoJoin(env('VITE_AUTO_JOIN', '#general')))
 
   // Runtime info
   const isOp = ref(false)

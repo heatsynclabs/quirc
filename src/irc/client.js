@@ -416,6 +416,12 @@ export class IRCClient {
     this.sendRaw(`CHATHISTORY LATEST ${target} * ${limit}`)
   }
 
+  chathistoryBefore(target, msgid, limit = 100) {
+    if (!this._capAcked.includes('chathistory')) return false
+    this.sendRaw(`CHATHISTORY BEFORE ${target} msgid=${msgid} ${limit}`)
+    return true
+  }
+
   on(event, handler) {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, [])

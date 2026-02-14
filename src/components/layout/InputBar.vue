@@ -10,14 +10,23 @@
       </button>
     </div>
 
+    <!-- Upload error -->
+    <div v-if="uploadError" class="upload-error">{{ uploadError }}</div>
+
     <!-- Input -->
     <div class="input-bar">
-      <span class="input-bar__prompt">&gt;</span>
+      <SlashCommandPalette
+        v-if="showCommandPalette"
+        ref="paletteRef"
+        :filter="commandFilter"
+        @select="onCommandSelect"
+      />
+      <span class="input-bar__nick">{{ nick || '>' }}</span>
       <input
         ref="inputRef"
         :value="modelValue"
         class="input-bar__input"
-        placeholder="say something..."
+        :placeholder="placeholder"
         @input="$emit('update:modelValue', $event.target.value); onInputEvent()"
         @keydown="onKeydown"
       />
@@ -27,11 +36,12 @@
         style="display: none"
         @change="onFileSelected"
       />
-      <button class="input-bar__attach" @click="triggerFileInput">
+      <button class="input-bar__attach" aria-label="Attach file" @click="triggerFileInput">
         <IconPaperclip :size="18" />
       </button>
       <button
         class="input-bar__send"
+        aria-label="Send message"
         :class="{ 'input-bar__send--active': modelValue.trim() }"
         @click="$emit('send')"
       >SEND</button>
@@ -42,6 +52,7 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
 import { IconReply, IconClose, IconPaperclip } from '@/components/icons'
+import SlashCommandPalette from '@/components/shared/SlashCommandPalette.vue'
 import { getNickColor } from '@/utils/nickColor'
 import { useUsersStore } from '@/stores/users'
 import { useChannelsStore } from '@/stores/channels'
@@ -52,6 +63,8 @@ import { useFileUpload } from '@/composables/useFileUpload'
 const props = defineProps({
   modelValue: { type: String, default: '' },
   replyTarget: { type: Object, default: null },
+  channelName: { type: String, default: '' },
+  nick: { type: String, default: '' },
 })
 
 const emit = defineEmits(['update:modelValue', 'send', 'clearReply'])
@@ -92,11 +105,16 @@ function clearTyping() {
   }
 }
 
-onUnmounted(() => clearTimeout(typingTimeout))
+onUnmounted(() => {
+  clearTimeout(typingTimeout)
+  clearTimeout(uploadErrorTimer)
+})
 
 // File upload
 const { uploading, progress, upload } = useFileUpload()
 const fileInputRef = ref(null)
+const uploadError = ref('')
+let uploadErrorTimer = null
 
 function triggerFileInput() {
   fileInputRef.value?.click()
@@ -112,10 +130,36 @@ async function onFileSelected(e) {
     }
   } catch (err) {
     console.error('[UPLOAD]', err)
+    uploadError.value = 'Upload failed'
+    clearTimeout(uploadErrorTimer)
+    uploadErrorTimer = setTimeout(() => { uploadError.value = '' }, 3000)
   }
   // Reset so same file can be re-selected
   e.target.value = ''
 }
+
+// Slash command palette
+const paletteRef = ref(null)
+const showCommandPalette = computed(() => {
+  const v = props.modelValue
+  return v.startsWith('/') && !v.includes(' ')
+})
+const commandFilter = computed(() => props.modelValue.slice(1).toLowerCase())
+
+function onCommandSelect(name) {
+  if (name) {
+    emit('update:modelValue', `/${name} `)
+  }
+  inputRef.value?.focus()
+}
+
+// DM-aware placeholder
+const placeholder = computed(() => {
+  if (props.channelName && !props.channelName.startsWith('#')) {
+    return `message ${props.channelName}`
+  }
+  return 'say something...'
+})
 
 // Input history
 const history = ref([])
@@ -127,6 +171,11 @@ const replyNickColor = computed(() =>
 )
 
 function onKeydown(e) {
+  // Forward to command palette if visible
+  if (showCommandPalette.value && paletteRef.value) {
+    if (paletteRef.value.onKeydown(e)) return
+  }
+
   // Enter to send
   if (e.key === 'Enter') {
     e.preventDefault()
@@ -240,6 +289,7 @@ defineExpose({ focus, uploading, progress })
 }
 
 .input-bar {
+  position: relative;
   border-top: 2px solid var(--q-border);
   padding: 8px 12px;
   padding-bottom: max(8px, env(safe-area-inset-bottom));
@@ -249,11 +299,18 @@ defineExpose({ focus, uploading, progress })
   gap: 6px;
 }
 
-.input-bar__prompt {
-  color: var(--q-accent-orange);
-  font-size: var(--q-font-size-base);
+.input-bar__nick {
+  color: var(--q-accent-teal);
+  font-size: var(--q-font-size-sm);
   font-weight: 700;
   flex-shrink: 0;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 8px;
+  border-right: 1px solid var(--q-border-strong);
+  margin-right: 2px;
 }
 
 .input-bar__input {
@@ -271,16 +328,20 @@ defineExpose({ focus, uploading, progress })
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 12px;
   display: flex;
   align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
 }
 
 .input-bar__send {
   background: var(--q-border);
   border: none;
   color: var(--q-text-muted);
-  padding: 8px 14px;
+  padding: 12px 16px;
+  min-height: 44px;
   cursor: pointer;
   font-family: var(--q-font-mono);
   font-size: var(--q-font-size-sm);
@@ -293,5 +354,13 @@ defineExpose({ focus, uploading, progress })
 .input-bar__send--active {
   background: var(--q-accent-orange);
   color: #000;
+}
+
+.upload-error {
+  padding: 4px 12px;
+  background: rgba(255, 46, 99, 0.12);
+  color: var(--q-accent-pink);
+  font-size: var(--q-font-size-xs);
+  text-align: center;
 }
 </style>

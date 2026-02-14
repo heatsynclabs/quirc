@@ -119,11 +119,24 @@ function onNotice(msg) {
 
   // Detect success/failure from common NickServ responses
   const lower = text.toLowerCase()
-  if (lower.includes('registered') || lower.includes('account has been created') || lower.includes('you are now logged in')) {
+  if (
+    lower.includes('registered') ||
+    lower.includes('account created') ||
+    lower.includes('created successfully') ||
+    lower.includes('account has been created') ||
+    lower.includes('you are now logged in') ||
+    lower.includes('logged in as') ||
+    lower.includes("you're now logged in")
+  ) {
     success.value = true
     registering.value = false
     step.value = 'result'
-  } else if (lower.includes('already registered') || lower.includes('invalid') || lower.includes('error') || lower.includes('could not')) {
+  } else if (
+    lower.includes('already registered') ||
+    lower.includes('invalid') ||
+    lower.includes('error') ||
+    lower.includes('could not')
+  ) {
     success.value = false
     registering.value = false
     step.value = 'result'

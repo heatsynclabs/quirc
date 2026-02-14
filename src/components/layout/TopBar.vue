@@ -1,25 +1,28 @@
 <template>
   <div class="topbar">
-    <button class="topbar__menu" @click="$emit('toggleChannels')">
+    <button class="topbar__menu" aria-label="Toggle channels" @click="$emit('toggleChannels')">
       <IconHamburger :size="20" />
     </button>
 
-    <div class="topbar__center">
+    <div class="topbar__center" @click="onChannelClick">
       <QuircMark :size="28" />
       <div class="topbar__info">
-        <div class="topbar__channel">{{ channelName || 'QUIRC' }}</div>
-        <div v-if="topic" class="topbar__topic">{{ topic }}</div>
-        <div v-else-if="connectionStatus !== 'connected'" class="topbar__status" :class="'topbar__status--' + connectionStatus">
+        <div class="topbar__channel">
+          <span v-if="channelName && !channelName.startsWith('#')" class="topbar__dm-tag">DM</span>
+          {{ channelName || 'QUIRC' }}
+          <span v-for="b in modeBadges" :key="b" class="topbar__mode-badge" :title="b.desc">{{ b.icon }}</span>
+        </div>
+        <div v-if="connectionStatus !== 'connected'" class="topbar__status" :class="'topbar__status--' + connectionStatus">
           {{ statusText }}
         </div>
       </div>
     </div>
 
-    <button class="topbar__search" @click="$emit('toggleSearch')">
+    <button class="topbar__search" aria-label="Search messages" @click="$emit('toggleSearch')">
       <IconSearch :size="18" />
     </button>
 
-    <button class="topbar__users" @click="$emit('toggleUsers')">
+    <button class="topbar__users" aria-label="Toggle user list" @click="$emit('toggleUsers')">
       <span class="topbar__users-dot" :class="{ 'topbar__users-dot--off': connectionStatus !== 'connected' }" />
       {{ onlineCount }}
     </button>
@@ -36,9 +39,26 @@ const props = defineProps({
   topic: { type: String, default: '' },
   onlineCount: { type: Number, default: 0 },
   connectionStatus: { type: String, default: 'disconnected' },
+  modes: { type: Object, default: () => ({}) },
 })
 
-defineEmits(['toggleChannels', 'toggleSearch', 'toggleUsers'])
+const emit = defineEmits(['toggleChannels', 'toggleSearch', 'toggleUsers', 'openChannelInfo'])
+
+const modeBadges = computed(() => {
+  const m = props.modes || {}
+  const badges = []
+  if (m.k) badges.push({ icon: '\u{1F512}', desc: 'Password protected (+k)' })
+  if (m.i) badges.push({ icon: '\u{1F6E1}', desc: 'Invite only (+i)' })
+  if (m.m) badges.push({ icon: '\u{1F507}', desc: 'Moderated (+m)' })
+  if (m.s) badges.push({ icon: '\u{1F441}', desc: 'Secret (+s)' })
+  return badges
+})
+
+function onChannelClick() {
+  if (props.channelName?.startsWith('#')) {
+    emit('openChannelInfo')
+  }
+}
 
 const statusText = computed(() => {
   switch (props.connectionStatus) {
@@ -76,6 +96,7 @@ const statusText = computed(() => {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  cursor: pointer;
 }
 
 .topbar__info {
@@ -88,13 +109,22 @@ const statusText = computed(() => {
   color: #fff;
 }
 
-.topbar__topic {
+.topbar__mode-badge {
+  font-size: 10px;
+  margin-left: 4px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+.topbar__dm-tag {
   font-size: var(--q-font-size-xs);
-  color: var(--q-text-muted);
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--q-accent-teal);
+  border: 1px solid var(--q-accent-teal);
+  padding: 1px 5px;
+  margin-right: 6px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  vertical-align: middle;
 }
 
 .topbar__status {
@@ -142,5 +172,11 @@ const statusText = computed(() => {
 
 .topbar__users-dot--off {
   background: #444;
+}
+
+@media (min-width: 768px) {
+  .topbar__menu {
+    display: none;
+  }
 }
 </style>

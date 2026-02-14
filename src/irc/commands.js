@@ -1,4 +1,31 @@
 /**
+ * Structured command definitions for the slash command palette
+ */
+export const COMMANDS = [
+  { name: 'join', aliases: ['j'], args: '<#channel> [key]', desc: 'Join a channel', category: 'channel', example: '/join #general' },
+  { name: 'part', aliases: ['leave'], args: '[#channel] [reason]', desc: 'Leave a channel', category: 'channel', example: '/part #random' },
+  { name: 'me', aliases: [], args: '<action>', desc: 'Send an action', category: 'chat', example: '/me waves hello' },
+  { name: 'topic', aliases: [], args: '[text]', desc: 'View or set channel topic', category: 'channel', example: '/topic Welcome to #general!' },
+  { name: 'nick', aliases: [], args: '<newnick>', desc: 'Change your nick', category: 'utility', example: '/nick coolname' },
+  { name: 'msg', aliases: ['query', 'privmsg'], args: '<target> <message>', desc: 'Send a private message', category: 'chat', example: '/msg alice Hey!' },
+  { name: 'notice', aliases: [], args: '<target> <message>', desc: 'Send a notice', category: 'chat', example: '/notice #general Hello all' },
+  { name: 'kick', aliases: [], args: '<nick> [reason]', desc: 'Kick a user (requires op)', category: 'admin', example: '/kick troll Spamming' },
+  { name: 'ban', aliases: [], args: '<mask>', desc: 'Ban a user (requires op)', category: 'admin', example: '/ban troll!*@*' },
+  { name: 'unban', aliases: [], args: '<mask>', desc: 'Unban a user (requires op)', category: 'admin', example: '/unban troll!*@*' },
+  { name: 'mode', aliases: [], args: '<modes>', desc: 'Set channel/user modes', category: 'admin', example: '/mode +i' },
+  { name: 'invite', aliases: [], args: '<nick> [#channel]', desc: 'Invite a user', category: 'channel', example: '/invite alice' },
+  { name: 'whois', aliases: ['wi'], args: '<nick>', desc: 'Look up a user', category: 'utility', example: '/whois alice' },
+  { name: 'list', aliases: [], args: '[filter]', desc: 'List channels on the server', category: 'channel', example: '/list' },
+  { name: 'away', aliases: [], args: '[message]', desc: 'Set away status', category: 'utility', example: '/away On lunch' },
+  { name: 'back', aliases: [], args: '', desc: 'Clear away status', category: 'utility', example: '/back' },
+  { name: 'clear', aliases: [], args: '', desc: 'Clear message history', category: 'utility', example: '/clear' },
+  { name: 'connect', aliases: ['server'], args: '', desc: 'Open connection dialog', category: 'utility', example: '/connect' },
+  { name: 'disconnect', aliases: ['quit'], args: '[reason]', desc: 'Disconnect from server', category: 'utility', example: '/disconnect' },
+  { name: 'raw', aliases: ['quote'], args: '<command>', desc: 'Send raw IRC command', category: 'utility', example: '/raw PRIVMSG #test :hello' },
+  { name: 'help', aliases: [], args: '', desc: 'Show command help', category: 'utility', example: '/help' },
+]
+
+/**
  * Slash command parser
  */
 export function parseSlashCommand(input) {

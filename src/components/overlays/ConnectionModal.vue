@@ -103,7 +103,7 @@
           <!-- Phase: success -->
           <template v-else-if="regPhase === 'success'">
             <div class="conn__result conn__result--ok">
-              <div v-for="(line, i) in regResultLines" :key="i">{{ line }}</div>
+              Registration successful!
             </div>
             <p class="conn__desc">
               Your nickname <strong>"{{ form.nick }}"</strong> is now reserved.
@@ -116,7 +116,7 @@
           <template v-else-if="regPhase === 'error'">
             <div class="conn__result conn__result--fail">
               <div v-for="(line, i) in regResultLines" :key="i">{{ line }}</div>
-              <div v-if="!regResultLines.length">Registration failed.</div>
+              <div v-if="!regResultLines.length">Registration failed — no response from NickServ.</div>
             </div>
           </template>
         </template>
@@ -154,6 +154,10 @@
             <span class="conn__arrow">{{ serverOpen ? '▾' : '▸' }}</span>
             Server settings
           </button>
+
+          <div v-if="!serverOpen && form.gatewayUrl" class="conn__server-hint">
+            Server: {{ form.serverHost || form.gatewayUrl }}
+          </div>
 
           <div v-if="serverOpen" class="conn__server">
             <label class="conn__label">SERVER HOST</label>
@@ -206,7 +210,7 @@
             <button
               v-else-if="regPhase === 'error'"
               class="conn__btn conn__btn--primary"
-              @click="regPhase = 'form'"
+              @click="onRegRetry"
             >TRY AGAIN</button>
           </template>
 
@@ -439,8 +443,12 @@ function onNotice(msg) {
   const lower = text.toLowerCase()
   if (
     lower.includes('registered') ||
+    lower.includes('account created') ||
+    lower.includes('created successfully') ||
     lower.includes('account has been created') ||
-    lower.includes('you are now logged in')
+    lower.includes('you are now logged in') ||
+    lower.includes('logged in as') ||
+    lower.includes("you're now logged in")
   ) {
     // Success — configure SASL for future logins
     connection.configure({
@@ -467,6 +475,14 @@ onUnmounted(() => {
   client.off('NOTICE', onNotice)
   clearTimeout(regTimeout)
 })
+
+// ─── Registration retry (clean reset) ───
+function onRegRetry() {
+  client.disconnect()
+  regPhase.value = 'form'
+  regResultLines.value = []
+  error.value = ''
+}
 
 // ─── Save profile ───
 function onSaveProfile() {
@@ -684,6 +700,13 @@ function loadProfile(s) {
 
 .conn__server {
   padding-bottom: 4px;
+}
+
+.conn__server-hint {
+  font-size: 11px;
+  color: var(--q-text-dim);
+  font-family: var(--q-font-mono);
+  padding: 0 0 4px;
 }
 
 /* ─── Registration progress ─── */

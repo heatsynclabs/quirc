@@ -11,11 +11,11 @@
   --q-border-dashed: #2a2a2a;
 
   /* Text */
-  --q-text-primary: #cccccc;
-  --q-text-secondary: #999999;
-  --q-text-muted: #555555;
-  --q-text-dim: #444444;
-  --q-text-ghost: #333333;
+  --q-text-primary: #e0e0e0;
+  --q-text-secondary: #aaaaaa;
+  --q-text-muted: #777777;
+  --q-text-dim: #666666;
+  --q-text-ghost: #555555;
 
   /* Accents - from mockup palette */
   --q-accent-teal: #08D9D6;
@@ -41,11 +41,11 @@
 
   /* Typography */
   --q-font-mono: 'Space Mono', 'Courier New', monospace;
-  --q-font-size-xs: 10px;
-  --q-font-size-sm: 11px;
-  --q-font-size-base: 13px;
-  --q-font-size-md: 14px;
-  --q-font-size-lg: 16px;
+  --q-font-size-xs: 11px;
+  --q-font-size-sm: 12px;
+  --q-font-size-base: 14px;
+  --q-font-size-md: 15px;
+  --q-font-size-lg: 17px;
 
   /* Spacing */
   --q-spacing-xs: 4px;

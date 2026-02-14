@@ -7,7 +7,8 @@ const ChannelView = {
 const routes = [
   {
     path: '/',
-    redirect: '/channel/general',
+    name: 'home',
+    component: ChannelView,
   },
   {
     path: '/channel/:name',

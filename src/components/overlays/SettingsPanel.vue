@@ -43,6 +43,26 @@
         <ToggleRow v-model="settings.notifyOnMention" label="Notify on mention" />
         <ToggleRow v-model="settings.notifyOnDM" label="Notify on DM" />
 
+        <div class="settings__keywords">
+          <label class="settings__row-label">Notify keywords</label>
+          <div class="settings__keywords-hint">Get notified when these words appear in messages</div>
+          <div v-if="settings.notifyKeywords.length" class="settings__keyword-tags">
+            <span v-for="(kw, i) in settings.notifyKeywords" :key="i" class="settings__keyword-tag">
+              {{ kw }}
+              <button class="settings__keyword-rm" @click="removeKeyword(i)">&times;</button>
+            </span>
+          </div>
+          <div class="settings__keyword-input-row">
+            <input
+              v-model="keywordInput"
+              class="settings__keyword-input"
+              placeholder="Add keyword..."
+              @keydown.enter="addKeyword"
+            />
+            <button class="settings__keyword-add" :disabled="!keywordInput.trim()" @click="addKeyword">ADD</button>
+          </div>
+        </div>
+
         <!-- Advanced -->
         <div class="settings__section">ADVANCED</div>
 
@@ -72,6 +92,7 @@
         <div class="settings__actions">
           <button class="settings__btn settings__btn--accent" @click="openRegister">REGISTER NICKNAME</button>
           <button class="settings__btn" @click="openConnect">EDIT CONNECTION</button>
+          <button class="settings__btn" @click="openHelp">HELP & COMMANDS</button>
           <button class="settings__btn settings__btn--danger" @click="onClearData">CLEAR ALL DATA</button>
         </div>
       </div>
@@ -80,6 +101,7 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { IconClose } from '@/components/icons'
 import { useSettingsStore } from '@/stores/settings'
 import { useConnectionStore } from '@/stores/connection'
@@ -109,6 +131,21 @@ const settings = useSettingsStore()
 const connection = useConnectionStore()
 const ui = useUiStore()
 
+const keywordInput = ref('')
+
+function addKeyword() {
+  const kw = keywordInput.value.trim()
+  if (!kw) return
+  if (!settings.notifyKeywords.includes(kw)) {
+    settings.notifyKeywords.push(kw)
+  }
+  keywordInput.value = ''
+}
+
+function removeKeyword(index) {
+  settings.notifyKeywords.splice(index, 1)
+}
+
 function openConnect() {
   emit('close')
   ui.connectionModalOpen = true
@@ -117,6 +154,11 @@ function openConnect() {
 function openRegister() {
   emit('close')
   ui.registerNickOpen = true
+}
+
+function openHelp() {
+  emit('close')
+  ui.helpOpen = true
 }
 
 function onClearData() {
@@ -306,5 +348,88 @@ function onClearData() {
 .settings__btn--danger:hover {
   border-color: var(--q-accent-pink);
   color: var(--q-accent-pink);
+}
+
+/* Keywords */
+.settings__keywords {
+  padding: 8px 0;
+}
+
+.settings__keywords-hint {
+  font-size: 11px;
+  color: var(--q-text-ghost);
+  margin-top: 2px;
+  margin-bottom: 8px;
+}
+
+.settings__keyword-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.settings__keyword-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid var(--q-border-strong);
+  font-size: 12px;
+  color: var(--q-text-secondary);
+  font-family: var(--q-font-mono);
+}
+
+.settings__keyword-rm {
+  background: none;
+  border: none;
+  color: var(--q-text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.settings__keyword-rm:hover {
+  color: var(--q-accent-pink);
+}
+
+.settings__keyword-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.settings__keyword-input {
+  flex: 1;
+  background: var(--q-bg-secondary);
+  border: 1px solid var(--q-border-strong);
+  color: var(--q-text-primary);
+  font-family: var(--q-font-mono);
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+.settings__keyword-input:focus {
+  border-color: var(--q-accent-teal);
+}
+
+.settings__keyword-add {
+  background: none;
+  border: 1px solid var(--q-border-strong);
+  color: var(--q-accent-teal);
+  font-family: var(--q-font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.settings__keyword-add:hover {
+  border-color: var(--q-accent-teal);
+}
+
+.settings__keyword-add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 </style>

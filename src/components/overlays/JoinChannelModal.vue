@@ -19,7 +19,7 @@
           @keydown.enter="onJoin"
         />
 
-        <label class="jc__label">KEY <span class="jc__opt">(optional)</span></label>
+        <label class="jc__label">CHANNEL PASSWORD <span class="jc__opt">(if required)</span></label>
         <input
           v-model="channelKey"
           class="jc__input"
@@ -30,6 +30,7 @@
 
       <div class="jc__actions">
         <button class="jc__btn" :disabled="!canJoin" @click="onJoin">JOIN</button>
+        <button class="jc__btn jc__btn--browse" @click="onBrowse">BROWSE CHANNELS</button>
       </div>
 
       <!-- Channel list from server -->
@@ -65,7 +66,7 @@ const props = defineProps({
   open: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['close', 'join'])
+const emit = defineEmits(['close', 'join', 'browse'])
 
 const channelName = ref('')
 const channelKey = ref('')
@@ -103,6 +104,11 @@ function onJoin() {
 function joinFromList(name) {
   channelName.value = name
   onJoin()
+}
+
+function onBrowse() {
+  emit('close')
+  emit('browse')
 }
 
 function fetchList() {
@@ -207,6 +213,9 @@ function fetchList() {
 
 .jc__actions {
   padding: 0 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .jc__btn {
@@ -227,6 +236,17 @@ function fetchList() {
   background: var(--q-border-strong);
   color: var(--q-text-dim);
   cursor: not-allowed;
+}
+
+.jc__btn--browse {
+  background: var(--q-bg-secondary);
+  border: 1px solid var(--q-border-strong);
+  color: var(--q-text-secondary);
+}
+
+.jc__btn--browse:hover {
+  border-color: var(--q-accent-teal);
+  color: var(--q-accent-teal);
 }
 
 .jc__list {

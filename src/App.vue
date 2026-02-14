@@ -3,32 +3,6 @@
   <div v-else class="app" :style="appStyle">
     <NoiseOverlay />
 
-    <TopBar
-      :channel-name="channels.activeChannel"
-      :topic="channels.currentChannel?.topic"
-      :online-count="users.onlineCount"
-      :connection-status="connection.status"
-      @toggle-channels="ui.toggleChannelDrawer()"
-      @toggle-search="ui.toggleSearch()"
-      @toggle-users="ui.toggleUsersDrawer()"
-    />
-
-    <MessageList
-      :messages="messages.currentMessages"
-      :typing-nicks="typingNicks"
-      :motd="connection.motd"
-      @reply="onReply"
-      @react="onReact"
-    />
-
-    <InputBar
-      ref="inputBarRef"
-      v-model="inputText"
-      :reply-target="messages.replyTarget"
-      @send="onSend"
-      @clear-reply="messages.clearReplyTarget()"
-    />
-
     <ChannelDrawer
       :open="ui.channelDrawerOpen"
       :channels="channels.channels"
@@ -41,8 +15,50 @@
       @close="ui.channelDrawerOpen = false"
       @pick="onChannelPick"
       @join-channel="onOpenJoinChannel"
+      @browse-channels="onBrowseChannels"
       @open-settings="onOpenSettings"
     />
+
+    <div class="app__main">
+      <TopBar
+        :channel-name="channels.activeChannel"
+        :topic="channels.currentChannel?.topic"
+        :online-count="users.onlineCount"
+        :connection-status="connection.status"
+        :modes="channels.currentChannel?.modes"
+        @toggle-channels="ui.toggleChannelDrawer()"
+        @toggle-search="ui.toggleSearch()"
+        @toggle-users="ui.toggleUsersDrawer()"
+        @open-channel-info="ui.channelInfoOpen = true"
+      />
+
+      <TopicBanner
+        :topic="channels.currentChannel?.topic"
+        @open-info="ui.channelInfoOpen = true"
+      />
+
+      <MessageList
+        :messages="messages.currentMessages"
+        :typing-nicks="typingNicks"
+        :motd="connection.motd"
+        :channel-name="channels.activeChannel"
+        :connection-status="connection.status"
+        :loading-history="loadingHistory"
+        @reply="onReply"
+        @react="onReact"
+        @load-history="onLoadHistory"
+      />
+
+      <InputBar
+        ref="inputBarRef"
+        v-model="inputText"
+        :reply-target="messages.replyTarget"
+        :channel-name="channels.activeChannel"
+        :nick="connection.nick"
+        @send="onSend"
+        @clear-reply="messages.clearReplyTarget()"
+      />
+    </div>
 
     <UsersDrawer
       :open="ui.usersDrawerOpen"
@@ -76,11 +92,36 @@
       :open="ui.joinChannelOpen"
       @close="ui.joinChannelOpen = false"
       @join="onJoinChannel"
+      @browse="ui.channelDiscoveryOpen = true"
     />
 
     <RegisterNickModal
       :open="ui.registerNickOpen"
       @close="ui.registerNickOpen = false"
+    />
+
+    <ChannelInfoPanel
+      :open="ui.channelInfoOpen"
+      :channel-name="channels.activeChannel"
+      @close="ui.channelInfoOpen = false"
+    />
+
+    <ChannelDiscoveryModal
+      :open="ui.channelDiscoveryOpen"
+      @close="ui.channelDiscoveryOpen = false"
+      @join="onJoinChannel"
+    />
+
+    <HelpPanel
+      :open="ui.helpOpen"
+      @close="ui.helpOpen = false"
+    />
+
+    <UserInfoCard
+      :open="ui.whoisCardOpen"
+      :data="ui.whoisData || {}"
+      @close="ui.closeWhoisCard()"
+      @open-d-m="onOpenDM"
     />
 
     <FileUploadToast
@@ -106,6 +147,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import SplashScreen from '@/components/SplashScreen.vue'
 import NoiseOverlay from '@/components/shared/NoiseOverlay.vue'
 import TopBar from '@/components/layout/TopBar.vue'
+import TopicBanner from '@/components/layout/TopicBanner.vue'
 import MessageList from '@/components/messages/MessageList.vue'
 import InputBar from '@/components/layout/InputBar.vue'
 import ChannelDrawer from '@/components/layout/ChannelDrawer.vue'
@@ -115,6 +157,10 @@ import ConnectionModal from '@/components/overlays/ConnectionModal.vue'
 import SettingsPanel from '@/components/overlays/SettingsPanel.vue'
 import JoinChannelModal from '@/components/overlays/JoinChannelModal.vue'
 import RegisterNickModal from '@/components/overlays/RegisterNickModal.vue'
+import ChannelInfoPanel from '@/components/overlays/ChannelInfoPanel.vue'
+import ChannelDiscoveryModal from '@/components/overlays/ChannelDiscoveryModal.vue'
+import HelpPanel from '@/components/overlays/HelpPanel.vue'
+import UserInfoCard from '@/components/overlays/UserInfoCard.vue'
 import FileUploadToast from '@/components/overlays/FileUploadToast.vue'
 
 const ui = useUiStore()
@@ -133,6 +179,7 @@ const showSplash = ref(true)
 const inputText = ref('')
 const inputBarRef = ref(null)
 const typingNicks = ref([])
+const loadingHistory = ref(false)
 const _typingTimers = new Map()
 
 // Font size CSS variable
@@ -226,17 +273,21 @@ function _onNotifyPrivmsg(msg) {
     return
   }
 
-  // @mention in channel
-  if (settings.notifyOnMention && text.toLowerCase().includes(client.nick.toLowerCase())) {
-    notifications.notify(`${nick} in ${target}`, text)
-    return
+  // @mention in channel (word boundary match to avoid false positives)
+  if (settings.notifyOnMention) {
+    const nickRe = new RegExp('\\b' + client.nick.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i')
+    if (nickRe.test(text)) {
+      notifications.notify(`${nick} in ${target}`, text)
+      return
+    }
   }
 
-  // Custom keyword matching
+  // Custom keyword matching (word boundary)
   if (settings.notifyKeywords.length > 0) {
-    const lower = text.toLowerCase()
     for (const kw of settings.notifyKeywords) {
-      if (kw && lower.includes(kw.toLowerCase())) {
+      if (!kw) continue
+      const kwRe = new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i')
+      if (kwRe.test(text)) {
         notifications.notify(`${nick} in ${target}`, text)
         return
       }
@@ -252,10 +303,10 @@ function onConnect({ keepOpen } = {}) {
 
 // Sync route to active channel
 if (route.params.name) {
-  const channelName = `#${route.params.name}`
-  if (channels.channels.find(c => c.name === channelName)) {
-    channels.setActive(channelName)
-  }
+  const asChannel = `#${route.params.name}`
+  const asDM = route.params.name
+  const match = channels.channels.find(c => c.name === asChannel || c.name === asDM)
+  if (match) channels.setActive(match.name)
 }
 
 // Sync active channel -> route
@@ -295,6 +346,11 @@ function onOpenJoinChannel() {
   ui.joinChannelOpen = true
 }
 
+function onBrowseChannels() {
+  ui.channelDrawerOpen = false
+  ui.channelDiscoveryOpen = true
+}
+
 function onOpenSettings() {
   ui.channelDrawerOpen = false
   ui.settingsOpen = true
@@ -304,14 +360,43 @@ function onJoinChannel(channel, key) {
   client.join(channel, key)
 }
 
+function onLoadHistory() {
+  const channel = channels.activeChannel
+  if (!channel || loadingHistory.value) return
+  const msgs = messages.currentMessages
+  // Find the oldest message with a msgid
+  const oldest = msgs.find(m => m.msgid)
+  if (!oldest?.msgid) return
+  loadingHistory.value = true
+  const sent = client.chathistoryBefore(channel, oldest.msgid, 100)
+  if (!sent) {
+    loadingHistory.value = false
+    return
+  }
+  // Clear loading after batch is received or timeout
+  const timeout = setTimeout(() => { loadingHistory.value = false }, 10000)
+  const handler = (batch) => {
+    if (batch.type !== 'chathistory') return
+    loadingHistory.value = false
+    clearTimeout(timeout)
+    client.off('batch:end', handler)
+  }
+  client.on('batch:end', handler)
+}
+
 function onOpenDM(nick) {
   channels.addChannel(nick, 'Direct message')
   channels.setActive(nick)
+  irc.client.chathistory(nick, 100)
 }
 
 // Global keyboard shortcuts
 function onGlobalKeydown(e) {
   if (e.key === 'Escape') {
+    if (ui.whoisCardOpen) { ui.closeWhoisCard(); return }
+    if (ui.channelInfoOpen) { ui.channelInfoOpen = false; return }
+    if (ui.channelDiscoveryOpen) { ui.channelDiscoveryOpen = false; return }
+    if (ui.helpOpen) { ui.helpOpen = false; return }
     if (ui.registerNickOpen) { ui.registerNickOpen = false; return }
     if (ui.searchOpen) { ui.searchOpen = false; return }
     if (ui.settingsOpen) { ui.settingsOpen = false; return }
@@ -363,5 +448,19 @@ onUnmounted(() => {
   font-family: var(--q-font-mono);
   position: relative;
   overflow: hidden;
+}
+
+.app__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .app {
+    flex-direction: row;
+  }
 }
 </style>

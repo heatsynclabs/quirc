@@ -34,12 +34,22 @@ export const useMessagesStore = defineStore('messages', () => {
     _trimToLimit(channel)
   }
 
-  function addSystemMessage(channel, text) {
+  function prependMessages(channel, newMessages) {
+    ensureChannel(channel)
+    const existing = messagesByChannel.value[channel]
+    // Deduplicate by msgid
+    const existingIds = new Set(existing.map(m => m.msgid).filter(Boolean))
+    const unique = newMessages.filter(m => !m.msgid || !existingIds.has(m.msgid))
+    messagesByChannel.value[channel] = [...unique, ...existing]
+  }
+
+  function addSystemMessage(channel, text, subtype = 'info') {
     const settings = useSettingsStore()
     ensureChannel(channel)
     messagesByChannel.value[channel].push({
       id: Date.now() + Math.random(),
       type: 'system',
+      subtype,
       time: formatTime(new Date(), settings.use24hTime),
       text,
     })
@@ -77,6 +87,7 @@ export const useMessagesStore = defineStore('messages', () => {
     replyTarget,
     currentMessages,
     addMessage,
+    prependMessages,
     addSystemMessage,
     addReaction,
     clearChannel,
