@@ -3,12 +3,12 @@ network:
 
 datastore:
   path: /ircd/ircd.db
+  autoupgrade: true
 
 server:
   name: irc.quirc.chat
 
   listeners:
-    # WebSocket only — App Platform terminates TLS and routes HTTPS here
     ":8080":
       websocket: true
 
@@ -24,21 +24,58 @@ server:
 accounts:
   registration:
     enabled: true
+    bcrypt-cost: 4
+    throttling:
+      enabled: true
+      duration: 10m
+      max-attempts: 30
+    email-verification:
+      enabled: false
   authentication-enabled: true
+  multiclient:
+    enabled: true
+    allowed-by-default: true
+    always-on: opt-in
   bouncer:
     enabled: true
     allowed-by-default: true
+
+limits:
+  nicklen: 32
+  identlen: 20
+  realnamelen: 150
+  channellen: 64
+  awaylen: 390
+  kicklen: 390
+  topiclen: 390
+  monitor-entries: 100
+  whowas-entries: 100
+  chan-list-modes: 60
+  registration-messages: 1024
+  multiline:
+    max-bytes: 4096
+    max-lines: 100
+
+channels:
+  default-modes: "+nt"
+  registration:
+    enabled: true
 
 history:
   enabled: true
   channel-length: 10000
   client-length: 1000
   chathistory-maxmessages: 1000
+  znc-maxmessages: 2048
+  restrictions:
+    expire-time: 168h
+    query-cutoff: none
+    grace-period: 1h
   retention:
     allow-individual-delete: false
     cutoff: 168h
 
-channels:
-  default-modes: "+nt"
-  registration:
-    enabled: true
+logging:
+  - method: stderr
+    level: info
+    type: "*"
