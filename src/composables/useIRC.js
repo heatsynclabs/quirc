@@ -109,8 +109,8 @@ export function useIRC() {
       ? formatTime(new Date(msg.tags['time']), settings.use24hTime)
       : formatTime(new Date(), settings.use24hTime)
 
-    // Ignore echo of our own messages (echo-message cap)
-    if (nick === client.nick && client._capAcked.includes('echo-message')) return
+    // Skip our own messages unless echoed by the server (echo-message cap)
+    if (nick === client.nick && !client._capAcked.includes('echo-message')) return
 
     // Determine target channel (DMs come with our nick as target)
     const channel = target.startsWith('#') ? target : nick
