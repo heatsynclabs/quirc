@@ -75,6 +75,7 @@ Server-side only (Netlify Functions):
 | `DO_SPACES_REGION` | Spaces region (e.g., `sfo3`) |
 | `DO_SPACES_BUCKET` | Spaces bucket name |
 | `DO_SPACES_CDN_DOMAIN` | Spaces CDN domain |
+| `CORS_ORIGIN` | Allowed origins for CORS (comma-separated) |
 
 Copy `.env.example` to `.env` and fill in your values.
 

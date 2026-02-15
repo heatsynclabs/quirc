@@ -8,7 +8,7 @@ Technical reference for contributors and developers working on QUIRC.
 |---|---|
 | Framework | Vue 3.5 (Composition API) |
 | State | Pinia 3 |
-| Routing | Vue Router 4 (hash history) |
+| Routing | Vue Router 4 (HTML5 history) |
 | Build | Vite 6 |
 | IRC Protocol | Custom WebSocket client (`src/irc/client.js`) |
 | Storage | localStorage (settings, connection), IndexedDB via Dexie (future) |
@@ -99,7 +99,7 @@ src/
     index.js                      Dexie IndexedDB schema (future use)
 
   router/
-    index.js                      Hash-based routing (/channel/:name)
+    index.js                      HTML5 history routing (/channel/:name)
 
 netlify/functions/                Serverless API endpoints
   upload-url.js                   S3 presigned URL generation

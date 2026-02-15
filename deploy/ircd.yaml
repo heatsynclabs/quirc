@@ -44,7 +44,7 @@ accounts:
     auto-away: opt-in
 
 # Server operators — uncomment and set a password hash to enable.
-# Generate a hash:  docker exec <container> /ircd/ergo genpasswd
+# Generate a hash:  docker exec <container> /ircd-bin/ergo genpasswd
 #
 # opers:
 #   admin:

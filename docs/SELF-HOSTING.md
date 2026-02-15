@@ -48,7 +48,12 @@ VITE_AUTO_JOIN=#general,#random
 ```bash
 cd deploy
 docker build -t quirc-ergo .
-docker run -d -p 8080:8080 -v quirc-data:/ircd --name quirc-ergo quirc-ergo
+docker run -d -p 8080:8080 -v quirc-data:/ircd \
+  -e DO_SPACES_KEY=your-key \
+  -e DO_SPACES_SECRET=your-secret \
+  -e DO_SPACES_REGION=sfo3 \
+  -e DO_SPACES_BUCKET=your-bucket \
+  --name quirc-ergo quirc-ergo
 ```
 
 You'll need a reverse proxy (nginx, Caddy) in front to handle TLS:
@@ -96,8 +101,9 @@ Edit `deploy/ircd.yaml` and add your domain:
 
 ```yaml
 server:
-  websocket-origins:
-    - "https://yourdomain.com"
+  websockets:
+    allowed-origins:
+      - "https://yourdomain.com"
 ```
 
 Rebuild and restart the container after changing the config.
@@ -161,7 +167,7 @@ The upload API runs as a Netlify Function. If you're not using Netlify, you'll n
 
 ## Step 7: Customize Branding (Optional)
 
-QUIRC's visual style is controlled by CSS custom properties in `src/assets/main.css`. You can override:
+QUIRC's visual style is controlled by CSS custom properties in `src/styles/variables.css`. You can override:
 
 - Colors: `--q-accent-teal`, `--q-accent-orange`, etc.
 - Backgrounds: `--q-bg-primary`, `--q-bg-secondary`

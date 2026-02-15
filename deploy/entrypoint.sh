@@ -80,6 +80,6 @@ if [ "$HAS_SPACES" = true ]; then
 fi
 
 # Start Ergo — wait in a loop so signals can interrupt cleanly
-/ircd/ergo run --conf /ircd/ircd.yaml &
+/ircd-bin/ergo run --conf /ircd/ircd.yaml &
 PID=$!
 wait "$PID" || true
