@@ -12,9 +12,10 @@ server:
     ":8080":
       websocket: true
 
-  websocket-origins:
-    - "https://heatsynclabs.chat"
-    - "https://www.heatsynclabs.chat"
+  websockets:
+    allowed-origins:
+      - "https://heatsynclabs.chat"
+      - "http://localhost:*"
 
   enforce-utf8: true
   max-sendq: 96k
@@ -25,11 +26,11 @@ server:
 accounts:
   registration:
     enabled: true
-    bcrypt-cost: 4
+    bcrypt-cost: 10
     throttling:
       enabled: true
       duration: 10m
-      max-attempts: 30
+      max-attempts: 5
     email-verification:
       enabled: false
   authentication-enabled: true
@@ -37,9 +38,17 @@ accounts:
     enabled: true
     allowed-by-default: true
     always-on: opt-in
-  bouncer:
-    enabled: true
-    allowed-by-default: true
+    auto-away: opt-in
+
+# Server operators — uncomment and set a password hash to enable.
+# Generate a hash:  docker exec <container> /ircd/ergo genpasswd
+#
+# opers:
+#   admin:
+#     class: "server-admin"
+#     hidden: true
+#     whois-line: is the server administrator
+#     password: "$2a$04$REPLACE_WITH_HASH_FROM_GENPASSWD"
 
 limits:
   nicklen: 32
@@ -59,8 +68,12 @@ limits:
 
 channels:
   default-modes: "+nt"
+  max-channels-per-client: 100
+  operator-only-creation: false
   registration:
     enabled: true
+    operator-only: false
+    max-channels-per-account: 15
 
 history:
   enabled: true
@@ -74,7 +87,11 @@ history:
     grace-period: 1h
   retention:
     allow-individual-delete: false
-    cutoff: 168h
+  persistent:
+    enabled: true
+    unregistered-channels: false
+    registered-channels: "opt-out"
+    direct-messages: "opt-out"
 
 logging:
   - method: stderr

@@ -4,6 +4,11 @@
 #
 # Runs Ergo IRC server with WebSocket listener.
 # App Platform terminates TLS — client connects via wss://irc.heatsynclabs.chat
+#
+# NOTE: Set DO_SPACES_KEY and DO_SPACES_SECRET in the App Platform dashboard
+# (Apps → Settings → Components → ergo → Environment Variables).
+# These enable automatic database backup/restore to DO Spaces so registered
+# accounts, channels, and history survive redeployments.
 
 name: heatsync-irc
 
@@ -30,6 +35,18 @@ services:
       period_seconds: 30
       timeout_seconds: 5
       failure_threshold: 5
+
+    envs:
+      - key: DO_SPACES_KEY
+        type: SECRET
+      - key: DO_SPACES_SECRET
+        type: SECRET
+      - key: DO_SPACES_REGION
+        value: sfo3
+      - key: DO_SPACES_BUCKET
+        value: heatsync
+      - key: BACKUP_INTERVAL
+        value: "300"
 
 domains:
   - domain: irc.heatsynclabs.chat

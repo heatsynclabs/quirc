@@ -16,7 +16,6 @@
       :src="imgSrc"
       class="inline-img__img"
       referrerpolicy="no-referrer"
-      crossorigin="anonymous"
       loading="lazy"
       @load="loaded = true"
       @error="onError"
