@@ -1,26 +1,26 @@
 network:
-  name: QuircIRC
+  name: HeatSyncLabs
 
 datastore:
   path: /ircd/ircd.db
   autoupgrade: true
 
 server:
-  name: irc.quirc.chat
+  name: irc.heatsynclabs.chat
 
   listeners:
     ":8080":
       websocket: true
 
   websocket-origins:
-    - "https://quirc.chat"
-    - "https://quirc.netlify.app"
+    - "https://heatsynclabs.chat"
+    - "https://www.heatsynclabs.chat"
 
   enforce-utf8: true
   max-sendq: 96k
   ip-cloaking:
     enabled: true
-    netname: quirc
+    netname: heatsync
 
 accounts:
   registration:

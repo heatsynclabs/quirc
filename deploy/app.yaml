@@ -3,16 +3,16 @@
 # Deploy with: doctl apps create --spec deploy/app.yaml
 #
 # Runs Ergo IRC server with WebSocket listener.
-# App Platform terminates TLS — client connects via wss://irc.quirc.chat
+# App Platform terminates TLS — client connects via wss://irc.heatsynclabs.chat
 
-name: quirc-irc
+name: heatsync-irc
 
 services:
   - name: ergo
     dockerfile_path: deploy/Dockerfile
     source_dir: deploy
     github:
-      repo: virgilvox/quirc
+      repo: heatsynclabs/quirc
       branch: main
       deploy_on_push: true
 
@@ -32,5 +32,5 @@ services:
       failure_threshold: 5
 
 domains:
-  - domain: irc.quirc.chat
+  - domain: irc.heatsynclabs.chat
     type: PRIMARY
