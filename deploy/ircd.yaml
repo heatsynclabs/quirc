@@ -12,9 +12,12 @@ server:
     ":8080":
       websocket: true
 
+  # Origins allowed to connect via WebSocket (CORS).
+  # Self-hosters: replace with your own client domain, or use "*" to allow all.
   websocket-origins:
     - "https://quirc.chat"
     - "https://quirc.netlify.app"
+    - "http://localhost:*"
 
   enforce-utf8: true
   max-sendq: 96k
@@ -41,6 +44,13 @@ accounts:
     enabled: true
     allowed-by-default: true
 
+# Server operators — uncomment and set a password hash to enable.
+# Generate a hash:  docker exec <container> /ircd/ergo genpasswd
+#
+# opers:
+#   admin:
+#     password: "$2a$04$REPLACE_WITH_HASH_FROM_GENPASSWD"
+
 limits:
   nicklen: 32
   identlen: 20
@@ -59,8 +69,11 @@ limits:
 
 channels:
   default-modes: "+nt"
+  max-channels-per-client: 100
+  operator-only-creation: false
   registration:
     enabled: true
+    max-channels-per-account: 15
 
 history:
   enabled: true

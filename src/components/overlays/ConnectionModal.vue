@@ -317,15 +317,18 @@ watch(() => props.open, (val) => {
   if (val) {
     form.value = {
       nick: connection.nick,
-      serverHost: connection.serverHost,
-      serverPort: connection.serverPort,
-      gatewayUrl: connection.gatewayUrl,
+      serverHost: connection.serverHost || import.meta.env.VITE_DEFAULT_SERVER || 'irc.quirc.chat',
+      serverPort: connection.serverPort || Number(import.meta.env.VITE_DEFAULT_PORT || 6697),
+      gatewayUrl: connection.gatewayUrl || import.meta.env.VITE_GATEWAY_URL || 'wss://irc.quirc.chat',
       password: connection.password,
       useSasl: connection.useSasl,
       saslUsername: connection.saslUsername,
       saslPassword: connection.saslPassword,
     }
-    autoJoinStr.value = connection.autoJoinChannels.join(', ')
+    const defaultChannels = (import.meta.env.VITE_AUTO_JOIN || '#general,#random').split(',').map(s => s.trim()).filter(Boolean)
+    autoJoinStr.value = connection.autoJoinChannels.length
+      ? connection.autoJoinChannels.join(', ')
+      : defaultChannels.join(', ')
     error.value = ''
     regPhase.value = 'form'
     regPassword.value = ''
