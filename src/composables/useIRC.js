@@ -52,11 +52,13 @@ export function useIRC() {
     for (const ch of connection.autoJoinChannels) {
       client.join(ch)
     }
-    // Restore saved DM channels and fetch their history
+    // Restore saved DM channels — load from DB first, then fetch server history
     const savedDMs = channels.getSavedDMs()
     for (const dm of savedDMs) {
       channels.addChannel(dm, 'Direct message')
-      client.chathistory(dm, 100)
+      messages.loadFromDB(dm).catch(() => {}).then(() => {
+        client.chathistory(dm, 100)
+      })
     }
     // Tip about registration for history persistence
     if (!connection.useSasl) {
@@ -288,7 +290,10 @@ export function useIRC() {
       }
       client.who(channel)
       client.mode(channel) // Request channel modes (triggers 324 reply)
-      client.chathistory(channel, 100)
+      // Load cached messages from IndexedDB first, then fetch CHATHISTORY to merge
+      messages.loadFromDB(channel).catch(() => {}).then(() => {
+        client.chathistory(channel, 100)
+      })
     } else {
       usersStore.addUser(channel, nick)
       if (settings.showJoinPart) {
@@ -762,6 +767,9 @@ export function useIRC() {
         break
       case 'raw':
         if (cmd.line) client.sendRaw(cmd.line)
+        break
+      case 'unknown':
+        messages.addSystemMessage(channels.activeChannel || '', `Unknown command: /${cmd.command}. Type /help for available commands.`, 'error')
         break
     }
   }

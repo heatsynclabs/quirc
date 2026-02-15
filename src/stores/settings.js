@@ -13,6 +13,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const saved = loadSaved()
 
   // Display
+  const theme = ref(saved.theme ?? 'dark')
   const use24hTime = ref(saved.use24hTime ?? true)
   const fontSize = ref(saved.fontSize ?? 13)
   const showJoinPart = ref(saved.showJoinPart ?? true)
@@ -36,8 +37,20 @@ export const useSettingsStore = defineStore('settings', () => {
   const rawMessageLog = ref(saved.rawMessageLog ?? false)
   const maxMessagesPerChannel = ref(saved.maxMessagesPerChannel ?? 10000)
 
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', theme.value)
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) {
+      meta.setAttribute('content', theme.value === 'light' ? '#f5f5f0' : '#0a0a0a')
+    }
+  }
+
+  // Apply theme immediately on store init
+  applyTheme()
+
   function persist() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      theme: theme.value,
       use24hTime: use24hTime.value,
       fontSize: fontSize.value,
       showJoinPart: showJoinPart.value,
@@ -58,8 +71,11 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   // Auto-persist on any change
+  // Re-apply theme whenever it changes
+  watch(theme, applyTheme)
+
   const allRefs = [
-    use24hTime, fontSize, showJoinPart, showTimestamps, coloredNicks,
+    theme, use24hTime, fontSize, showJoinPart, showTimestamps, coloredNicks,
     mediaAutoExpand, linkPreviews, inlineImages,
     showTypingIndicators, sendTypingIndicators, desktopNotifications,
     notifyOnMention, notifyOnDM, notifyKeywords,
@@ -74,6 +90,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   return {
+    theme,
     use24hTime,
     fontSize,
     showJoinPart,

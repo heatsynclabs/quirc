@@ -1,7 +1,7 @@
 <template>
   <div class="topbar">
     <button class="topbar__menu" aria-label="Toggle channels" @click="$emit('toggleChannels')">
-      <IconHamburger :size="20" />
+      <IconHamburger :size="22" />
     </button>
 
     <div class="topbar__center" @click="onChannelClick">
@@ -18,8 +18,17 @@
       </div>
     </div>
 
+    <a class="topbar__github" href="https://github.com/virgilvox/quirc" target="_blank" rel="noopener noreferrer" aria-label="View on GitHub">
+      <IconGithub :size="18" />
+    </a>
+
+    <button class="topbar__theme" aria-label="Toggle theme" @click="toggleTheme">
+      <IconSun v-if="settingsStore.theme === 'dark'" :size="18" />
+      <IconMoon v-else :size="18" />
+    </button>
+
     <button class="topbar__search" aria-label="Search messages" @click="$emit('toggleSearch')">
-      <IconSearch :size="18" />
+      <IconSearch :size="20" />
     </button>
 
     <button class="topbar__users" aria-label="Toggle user list" @click="$emit('toggleUsers')">
@@ -31,8 +40,9 @@
 
 <script setup>
 import { computed } from 'vue'
-import { IconHamburger, IconSearch } from '@/components/icons'
+import { IconHamburger, IconSearch, IconGithub, IconSun, IconMoon } from '@/components/icons'
 import QuircMark from '@/components/logo/QuircMark.vue'
+import { useSettingsStore } from '@/stores/settings'
 
 const props = defineProps({
   channelName: { type: String, default: '' },
@@ -43,6 +53,11 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['toggleChannels', 'toggleSearch', 'toggleUsers', 'openChannelInfo'])
+
+const settingsStore = useSettingsStore()
+function toggleTheme() {
+  settingsStore.theme = settingsStore.theme === 'dark' ? 'light' : 'dark'
+}
 
 const modeBadges = computed(() => {
   const m = props.modes || {}
@@ -106,7 +121,7 @@ const statusText = computed(() => {
 .topbar__channel {
   font-size: var(--q-font-size-md);
   font-weight: 700;
-  color: #fff;
+  color: var(--q-text-bright);
 }
 
 .topbar__mode-badge {
@@ -143,6 +158,34 @@ const statusText = computed(() => {
   color: var(--q-accent-pink);
 }
 
+.topbar__github {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.topbar__github:hover {
+  opacity: 1;
+}
+
+.topbar__theme {
+  background: none;
+  border: none;
+  color: var(--q-text-muted);
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.topbar__theme:hover {
+  opacity: 1;
+}
+
 .topbar__search {
   background: none;
   border: none;
@@ -171,7 +214,7 @@ const statusText = computed(() => {
 }
 
 .topbar__users-dot--off {
-  background: #444;
+  background: var(--q-text-inactive);
 }
 
 @media (min-width: 768px) {

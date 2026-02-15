@@ -1,5 +1,5 @@
 <template>
-  <div v-if="open" class="whois-overlay" @click.self="$emit('close')">
+  <div v-if="open" class="whois-overlay" role="dialog" aria-modal="true" aria-label="User info" @click.self="$emit('close')">
     <div class="whois-card">
       <button class="whois-card__close" @click="$emit('close')">&times;</button>
 
@@ -90,7 +90,7 @@ function onDM() {
   position: fixed;
   inset: 0;
   z-index: 300;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--q-backdrop-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -147,7 +147,7 @@ function onDM() {
 .whois-card__nick {
   font-size: var(--q-font-size-lg);
   font-weight: 700;
-  color: #fff;
+  color: var(--q-text-bright);
 }
 
 .whois-card__host {

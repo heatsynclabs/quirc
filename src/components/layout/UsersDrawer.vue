@@ -164,7 +164,7 @@ function onBan() {
 .us-drawer__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--q-backdrop-light);
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -259,7 +259,7 @@ function onBan() {
 }
 
 .us-drawer__dot--off {
-  background: #444;
+  background: var(--q-text-inactive);
 }
 
 .us-drawer__nick {

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="open" class="disc">
+  <div v-if="open" class="disc" role="dialog" aria-modal="true" aria-label="Browse channels">
     <div class="disc__backdrop" @click="$emit('close')" />
     <div class="disc__panel">
       <div class="disc__header">
@@ -151,7 +151,7 @@ function onJoin(channel) {
 .disc__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--q-backdrop);
 }
 
 .disc__panel {

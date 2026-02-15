@@ -10,7 +10,7 @@ defineProps({
 
 <style scoped>
 .codeblock {
-  background: #080808;
+  background: var(--q-bg-primary);
   border: 1px solid var(--q-border);
   border-left: 3px solid var(--q-border-strong);
   padding: 10px 12px;

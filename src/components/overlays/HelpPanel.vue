@@ -1,5 +1,5 @@
 <template>
-  <div v-if="open" class="help">
+  <div v-if="open" class="help" role="dialog" aria-modal="true" aria-label="Help and commands">
     <div class="help__backdrop" @click="$emit('close')" />
     <div class="help__panel">
       <div class="help__header">
@@ -104,7 +104,7 @@ defineEmits(['close'])
 .help__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--q-backdrop);
 }
 
 .help__panel {

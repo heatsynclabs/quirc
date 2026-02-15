@@ -1,5 +1,5 @@
 <template>
-  <div v-if="open" class="settings">
+  <div v-if="open" class="settings" role="dialog" aria-modal="true" aria-label="Settings">
     <div class="settings__backdrop" @click="$emit('close')" />
     <div class="settings__panel">
       <div class="settings__header">
@@ -12,6 +12,22 @@
       <div class="settings__body">
         <!-- Display -->
         <div class="settings__section">DISPLAY</div>
+
+        <div class="settings__row">
+          <span class="settings__row-label">Theme</span>
+          <div class="settings__theme-toggle">
+            <button
+              class="settings__theme-btn"
+              :class="{ 'settings__theme-btn--active': settings.theme === 'dark' }"
+              @click="settings.theme = 'dark'"
+            >DARK</button>
+            <button
+              class="settings__theme-btn"
+              :class="{ 'settings__theme-btn--active': settings.theme === 'light' }"
+              @click="settings.theme = 'light'"
+            >LIGHT</button>
+          </div>
+        </div>
 
         <ToggleRow v-model="settings.use24hTime" label="24-hour time" />
         <ToggleRow v-model="settings.showTimestamps" label="Show timestamps" />
@@ -184,7 +200,7 @@ function onClearData() {
 .settings__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--q-backdrop);
 }
 
 .settings__panel {
@@ -270,6 +286,29 @@ function onClearData() {
   color: var(--q-text-muted);
 }
 
+.settings__theme-toggle {
+  display: flex;
+  gap: 0;
+}
+
+.settings__theme-btn {
+  background: var(--q-bg-secondary);
+  border: 1px solid var(--q-border-strong);
+  color: var(--q-text-muted);
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: var(--q-font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.settings__theme-btn--active {
+  background: var(--q-accent-teal);
+  color: var(--q-text-on-accent);
+  border-color: var(--q-accent-teal);
+}
+
 .settings__size-btn {
   background: var(--q-bg-secondary);
   border: 1px solid var(--q-border-strong);
@@ -335,13 +374,13 @@ function onClearData() {
 
 .settings__btn--accent {
   background: var(--q-accent-teal);
-  color: #000;
+  color: var(--q-text-on-accent);
   border: none;
 }
 
 .settings__btn--accent:hover {
   opacity: 0.9;
-  color: #000;
+  color: var(--q-text-on-accent);
   border: none;
 }
 

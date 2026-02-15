@@ -1,5 +1,5 @@
 <template>
-  <div v-if="open" class="conn">
+  <div v-if="open" class="conn" role="dialog" aria-modal="true" aria-label="Connect to server">
     <div class="conn__backdrop" @click="dismissable && $emit('close')" />
     <div class="conn__panel">
       <!-- Tabs -->
@@ -522,7 +522,7 @@ function loadProfile(s) {
 .conn__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--q-backdrop);
 }
 
 .conn__panel {
@@ -773,12 +773,12 @@ function loadProfile(s) {
 
 .conn__btn--primary {
   background: var(--q-accent-orange);
-  color: #000;
+  color: var(--q-text-on-accent);
 }
 
 .conn__btn--register {
   background: var(--q-accent-teal);
-  color: #000;
+  color: var(--q-text-on-accent);
 }
 
 .conn__btn--secondary {

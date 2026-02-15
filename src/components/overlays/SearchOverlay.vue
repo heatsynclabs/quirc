@@ -1,5 +1,5 @@
 <template>
-  <div v-if="open" class="search">
+  <div v-if="open" class="search" role="dialog" aria-modal="true" aria-label="Search messages">
     <div class="search__header">
       <IconSearch :size="18" color="var(--q-accent-orange)" />
       <input
@@ -61,7 +61,7 @@ const results = computed(() => {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(0, 0, 0, 0.92);
+  background: var(--q-backdrop-heavy);
   display: flex;
   flex-direction: column;
 }

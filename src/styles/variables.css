@@ -17,6 +17,16 @@
   --q-text-dim: #666666;
   --q-text-ghost: #555555;
 
+  /* Semantic text */
+  --q-text-on-accent: #000;
+  --q-text-bright: #fff;
+  --q-text-inactive: #444;
+
+  /* Overlays & backdrops */
+  --q-backdrop: rgba(0, 0, 0, 0.85);
+  --q-backdrop-heavy: rgba(0, 0, 0, 0.92);
+  --q-backdrop-light: rgba(0, 0, 0, 0.65);
+
   /* Accents - from mockup palette */
   --q-accent-teal: #08D9D6;
   --q-accent-orange: #e85d3b;
@@ -41,8 +51,8 @@
 
   /* Typography */
   --q-font-mono: 'Space Mono', 'Courier New', monospace;
-  --q-font-size-xs: 11px;
-  --q-font-size-sm: 12px;
+  --q-font-size-xs: 12px;
+  --q-font-size-sm: 13px;
   --q-font-size-base: 14px;
   --q-font-size-md: 15px;
   --q-font-size-lg: 17px;
@@ -55,7 +65,60 @@
   --q-spacing-xl: 20px;
 
   /* Layout */
-  --q-topbar-height: 52px;
+  --q-topbar-height: 56px;
   --q-drawer-width: 280px;
   --q-users-drawer-width: 240px;
+}
+
+/* ─── Light Theme ────────────────────────────────────── */
+:root[data-theme="light"] {
+  /* Backgrounds */
+  --q-bg-primary: #f5f5f0;
+  --q-bg-secondary: #eaeae5;
+  --q-bg-elevated: #e0e0db;
+  --q-bg-hover: #ddddd8;
+
+  /* Borders */
+  --q-border: #d0d0cb;
+  --q-border-strong: #b8b8b3;
+  --q-border-dashed: #b8b8b3;
+
+  /* Text */
+  --q-text-primary: #1a1a1a;
+  --q-text-secondary: #444444;
+  --q-text-muted: #666666;
+  --q-text-dim: #888888;
+  --q-text-ghost: #999999;
+
+  /* Semantic text */
+  --q-text-on-accent: #000;
+  --q-text-bright: #1a1a1a;
+  --q-text-inactive: #aaa;
+
+  /* Overlays & backdrops */
+  --q-backdrop: rgba(0, 0, 0, 0.5);
+  --q-backdrop-heavy: rgba(0, 0, 0, 0.6);
+  --q-backdrop-light: rgba(0, 0, 0, 0.3);
+
+  /* Accents — slightly adjusted for contrast on light bg */
+  --q-accent-teal: #0abab8;
+  --q-accent-orange: #d4502e;
+  --q-accent-gold: #c9a020;
+  --q-accent-pink: #e02555;
+  --q-accent-acid: #8a9900;
+  --q-accent-green: #3da84f;
+  --q-accent-blue: #2d7ae0;
+  --q-accent-purple: #a840c9;
+
+  /* Nick colors — adjusted for light bg readability */
+  --q-nick-1: #c04020;
+  --q-nick-2: #a08000;
+  --q-nick-3: #2a8a3f;
+  --q-nick-4: #2d6ed0;
+  --q-nick-5: #c06d10;
+  --q-nick-6: #9430b0;
+  --q-nick-7: #108a6a;
+  --q-nick-8: #d04070;
+  --q-nick-9: #6a8a10;
+  --q-nick-10: #4a60d0;
 }

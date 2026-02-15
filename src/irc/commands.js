@@ -97,8 +97,7 @@ export function parseSlashCommand(input) {
     case 'quote':
       return { type: 'raw', line: args }
     default:
-      // Treat unknown /commands as raw IRC
-      return { type: 'raw', line: `${cmd.toUpperCase()} ${args}`.trim() }
+      return { type: 'unknown', command: cmd }
   }
 }
 

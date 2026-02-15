@@ -31,7 +31,7 @@ defineProps({
 
 .link-preview__title {
   font-size: 12px;
-  color: #ddd;
+  color: var(--q-text-primary);
   font-weight: 700;
   margin-bottom: 2px;
 }

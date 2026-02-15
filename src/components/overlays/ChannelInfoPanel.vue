@@ -1,5 +1,5 @@
 <template>
-  <div v-if="open" class="chinfo">
+  <div v-if="open" class="chinfo" role="dialog" aria-modal="true" aria-label="Channel info">
     <div class="chinfo__backdrop" @click="$emit('close')" />
     <div class="chinfo__panel">
       <div class="chinfo__header">
@@ -238,7 +238,7 @@ function removeBan(mask) {
 .chinfo__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--q-backdrop);
 }
 
 .chinfo__panel {
@@ -506,6 +506,6 @@ function removeBan(mask) {
 }
 
 .chinfo__ban-remove:hover {
-  color: #fff;
+  color: var(--q-text-bright);
 }
 </style>

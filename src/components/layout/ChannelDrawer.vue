@@ -15,12 +15,12 @@
       <div class="ch-drawer__list">
         <div class="ch-drawer__label-row">
           <button class="ch-drawer__toggle" @click="channelsCollapsed = !channelsCollapsed">
-            <span class="ch-drawer__arrow" :class="{ 'ch-drawer__arrow--collapsed': channelsCollapsed }">&#x25BC;</span>
+            <IconChevron :size="14" :rotation="channelsCollapsed ? -90 : 0" />
             <span class="ch-drawer__label">channels</span>
           </button>
           <div class="ch-drawer__label-actions">
-            <button class="ch-drawer__add" title="Browse channels" aria-label="Browse channels" @click="$emit('browseChannels')">&#x2630;</button>
-            <button class="ch-drawer__add" title="Join channel" aria-label="Join channel" @click="$emit('joinChannel')">+</button>
+            <button class="ch-drawer__add" title="Browse channels" aria-label="Browse channels" @click="$emit('browseChannels')"><IconList :size="16" /></button>
+            <button class="ch-drawer__add" title="Join channel" aria-label="Join channel" @click="$emit('joinChannel')"><IconPlus :size="16" /></button>
           </div>
         </div>
         <template v-if="!channelsCollapsed">
@@ -37,7 +37,7 @@
           >
             <span class="ch-drawer__name" :class="{ 'ch-drawer__name--active': ch.name === active }">{{ ch.name }}</span>
             <span v-if="ch.unread > 0" class="ch-drawer__badge">{{ ch.unread }}</span>
-            <button class="ch-drawer__close" aria-label="Leave channel" @click.stop="onCloseChannel(ch.name)">&times;</button>
+            <button class="ch-drawer__close" aria-label="Leave channel" @click.stop="onCloseChannel(ch.name)"><IconClose :size="16" /></button>
           </div>
         </template>
 
@@ -45,7 +45,7 @@
         <template v-if="dmChannels.length">
           <div class="ch-drawer__label-row ch-drawer__label-row--dm">
             <button class="ch-drawer__toggle" @click="dmsCollapsed = !dmsCollapsed">
-              <span class="ch-drawer__arrow" :class="{ 'ch-drawer__arrow--collapsed': dmsCollapsed }">&#x25BC;</span>
+              <IconChevron :size="14" :rotation="dmsCollapsed ? -90 : 0" />
               <span class="ch-drawer__label">direct messages</span>
             </button>
           </div>
@@ -60,7 +60,7 @@
             >
               <span class="ch-drawer__name ch-drawer__name--dm" :class="{ 'ch-drawer__name--active': ch.name === active }">{{ ch.name }}</span>
               <span v-if="ch.unread > 0" class="ch-drawer__badge">{{ ch.unread }}</span>
-              <button class="ch-drawer__close" aria-label="Close DM" @click.stop="onCloseChannel(ch.name)">&times;</button>
+              <button class="ch-drawer__close" aria-label="Close DM" @click.stop="onCloseChannel(ch.name)"><IconClose :size="16" /></button>
             </div>
           </template>
         </template>
@@ -83,7 +83,7 @@
         <span class="ch-drawer__nick">{{ nick }}</span>
         <span v-if="isOp" class="ch-drawer__op">@op</span>
         <button class="ch-drawer__settings" aria-label="Open settings" @click="$emit('openSettings')">
-          <IconSettings :size="16" color="var(--q-text-muted)" />
+          <IconSettings :size="18" color="var(--q-text-muted)" />
         </button>
       </div>
     </div>
@@ -93,7 +93,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import QuircMark from '@/components/logo/QuircMark.vue'
-import { IconSettings } from '@/components/icons'
+import { IconSettings, IconChevron, IconList, IconPlus, IconClose } from '@/components/icons'
 import { useChannelsStore } from '@/stores/channels'
 import { getClient } from '@/irc/client'
 
@@ -176,7 +176,7 @@ function onMute() {
 .ch-drawer__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--q-backdrop-light);
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -214,7 +214,7 @@ function onMute() {
 .ch-drawer__title {
   font-size: var(--q-font-size-lg);
   font-weight: 800;
-  color: #fff;
+  color: var(--q-text-bright);
   letter-spacing: 3px;
 }
 
@@ -246,16 +246,6 @@ function onMute() {
   gap: 6px;
 }
 
-.ch-drawer__arrow {
-  font-size: 10px;
-  color: var(--q-text-dim);
-  transition: transform 0.15s;
-}
-
-.ch-drawer__arrow--collapsed {
-  transform: rotate(-90deg);
-}
-
 .ch-drawer__label {
   font-size: var(--q-font-size-xs);
   letter-spacing: 3px;
@@ -272,8 +262,8 @@ function onMute() {
   background: none;
   border: 1px solid var(--q-border-strong);
   color: var(--q-text-dim);
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   cursor: pointer;
   font-size: 14px;
   font-family: var(--q-font-mono);
@@ -319,7 +309,7 @@ function onMute() {
 }
 
 .ch-drawer__name--active {
-  color: #fff;
+  color: var(--q-text-bright);
 }
 
 .ch-drawer__name--dm {
@@ -355,7 +345,7 @@ function onMute() {
 
 .ch-drawer__badge {
   background: var(--q-accent-orange);
-  color: #000;
+  color: var(--q-text-on-accent);
   font-size: var(--q-font-size-xs);
   font-weight: 700;
   padding: 2px 6px;
@@ -415,7 +405,7 @@ function onMute() {
 .ch-drawer__status-dot {
   width: 8px;
   height: 8px;
-  background: #444;
+  background: var(--q-text-inactive);
 }
 
 .ch-drawer__status-dot--connected {
@@ -429,7 +419,7 @@ function onMute() {
 }
 
 .ch-drawer__status-dot--disconnected {
-  background: #444;
+  background: var(--q-text-inactive);
 }
 
 .ch-drawer__status-dot--error {
@@ -437,7 +427,7 @@ function onMute() {
 }
 
 .ch-drawer__nick {
-  color: #aaa;
+  color: var(--q-text-secondary);
   font-size: var(--q-font-size-base);
 }
 

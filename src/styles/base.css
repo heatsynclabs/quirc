@@ -69,5 +69,5 @@ input:focus-visible,
 
 ::selection {
   background: var(--q-accent-teal);
-  color: #000;
+  color: var(--q-text-on-accent);
 }

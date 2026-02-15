@@ -1,5 +1,5 @@
 <template>
-  <div v-if="open" class="jc">
+  <div v-if="open" class="jc" role="dialog" aria-modal="true" aria-label="Join channel">
     <div class="jc__backdrop" @click="$emit('close')" />
     <div class="jc__panel">
       <div class="jc__header">
@@ -139,7 +139,7 @@ function fetchList() {
 .jc__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--q-backdrop);
 }
 
 .jc__panel {
@@ -223,7 +223,7 @@ function fetchList() {
   padding: 12px;
   border: none;
   background: var(--q-accent-orange);
-  color: #000;
+  color: var(--q-text-on-accent);
   font-family: var(--q-font-mono);
   font-size: var(--q-font-size-sm);
   font-weight: 700;

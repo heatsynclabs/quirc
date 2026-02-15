@@ -1,5 +1,5 @@
 <template>
-  <div class="msg-list" ref="scrollRef" @scroll="onScroll">
+  <div class="msg-list" ref="scrollRef" role="log" aria-live="polite" @scroll="onScroll">
     <!-- Disconnection banner -->
     <div v-if="connectionStatus === 'disconnected' || connectionStatus === 'error'" class="msg-list__offline">
       Connection lost. Reconnecting...

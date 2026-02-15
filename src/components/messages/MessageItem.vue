@@ -50,11 +50,11 @@
     <!-- Hover actions -->
     <div v-if="hover" class="msg__actions">
       <button class="msg__action-btn" @click="$emit('reply', message)">
-        <IconReply :size="14" />
+        <IconReply :size="18" />
       </button>
       <div class="msg__emoji-wrap">
         <button class="msg__action-btn" @click="emojiOpen = !emojiOpen">
-          <IconPlus :size="14" />
+          <IconPlus :size="18" />
         </button>
         <EmojiPicker
           v-if="emojiOpen"
@@ -66,7 +66,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { getNickColor } from '@/utils/nickColor'
 import { useSettingsStore } from '@/stores/settings'
 import { IconReply, IconPlus } from '@/components/icons'
@@ -110,6 +110,10 @@ function onTouchStart() {
 function onTouchEnd() {
   clearTimeout(touchTimer)
 }
+
+onUnmounted(() => {
+  clearTimeout(touchTimer)
+})
 </script>
 
 <style scoped>
@@ -150,6 +154,8 @@ function onTouchEnd() {
 .msg__body {
   color: var(--q-text-primary);
   margin-top: 1px;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .msg__actions {

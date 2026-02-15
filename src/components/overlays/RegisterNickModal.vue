@@ -1,5 +1,5 @@
 <template>
-  <div v-if="open" class="reg">
+  <div v-if="open" class="reg" role="dialog" aria-modal="true" aria-label="Register nickname">
     <div class="reg__backdrop" @click="$emit('close')" />
     <div class="reg__panel">
       <div class="reg__header">
@@ -204,7 +204,7 @@ watch(() => step.value, () => {
 .reg__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--q-backdrop);
 }
 
 .reg__panel {
@@ -308,7 +308,7 @@ watch(() => step.value, () => {
   padding: 12px;
   border: none;
   background: var(--q-accent-teal);
-  color: #000;
+  color: var(--q-text-on-accent);
   font-family: var(--q-font-mono);
   font-size: var(--q-font-size-sm);
   font-weight: 700;

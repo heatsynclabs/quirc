@@ -7,7 +7,7 @@
 
 <script setup>
 defineProps({
-  size: { type: Number, default: 24 },
+  size: { type: Number, default: 16 },
   color: { type: String, default: 'var(--q-text-muted)' },
 })
 </script>

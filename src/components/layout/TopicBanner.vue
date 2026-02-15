@@ -1,11 +1,13 @@
 <template>
   <div v-if="topic" class="topic-banner" @click="$emit('openInfo')">
-    <span class="topic-banner__icon">&#x2139;</span>
+    <IconInfo :size="16" />
     <span class="topic-banner__text">{{ topic }}</span>
   </div>
 </template>
 
 <script setup>
+import { IconInfo } from '@/components/icons'
+
 defineProps({
   topic: { type: String, default: '' },
 })
@@ -27,13 +29,6 @@ defineEmits(['openInfo'])
 
 .topic-banner:hover {
   background: var(--q-bg-hover);
-}
-
-.topic-banner__icon {
-  color: var(--q-accent-teal);
-  flex-shrink: 0;
-  font-size: var(--q-font-size-sm);
-  line-height: 1.5;
 }
 
 .topic-banner__text {

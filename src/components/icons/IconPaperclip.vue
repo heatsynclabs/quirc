@@ -1,12 +1,18 @@
 <template>
   <svg :width="size" :height="size" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21 11L12.5 19.5C10.0147 21.9853 6.01472 21.9853 3.5 19.5C0.985281 17.0147 0.985281 13.0147 3.5 10.5L12 2C13.6569 0.343146 16.3431 0.343146 18 2C19.6569 3.65685 19.6569 6.34315 18 8L9.5 16.5C8.67157 17.3284 7.32843 17.3284 6.5 16.5C5.67157 15.6716 5.67157 14.3284 6.5 13.5L14 6" :stroke="color" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" />
+    <path
+      d="M21.44 11.05L12.25 20.24C10.01 22.48 6.37 22.48 4.13 20.24C1.89 18 1.89 14.36 4.13 12.12L13.33 2.93C14.79 1.47 17.15 1.47 18.61 2.93C20.07 4.39 20.07 6.75 18.61 8.21L9.41 17.41C8.68 18.14 7.5 18.14 6.77 17.41C6.04 16.68 6.04 15.5 6.77 14.77L15.97 5.58"
+      :stroke="color"
+      stroke-width="2"
+      stroke-linecap="square"
+      stroke-linejoin="miter"
+    />
   </svg>
 </template>
 
 <script setup>
 defineProps({
-  size: { type: Number, default: 24 },
+  size: { type: Number, default: 18 },
   color: { type: String, default: 'var(--q-text-muted)' },
 })
 </script>

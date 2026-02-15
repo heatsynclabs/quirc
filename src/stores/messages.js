@@ -3,10 +3,32 @@ import { defineStore } from 'pinia'
 import { useChannelsStore } from './channels'
 import { useSettingsStore } from './settings'
 import { formatTime } from '@/utils/time'
+import { saveMessages, loadMessages, clearChannel as dbClearChannel } from '@/db/messageStore'
 
 export const useMessagesStore = defineStore('messages', () => {
   const messagesByChannel = ref({})
   const replyTarget = ref(null)
+
+  // Batched DB persistence
+  const _pendingSave = {}
+  let _saveTimer = null
+
+  function _scheduleSave(channel, msgs) {
+    if (!_pendingSave[channel]) _pendingSave[channel] = []
+    _pendingSave[channel].push(...msgs)
+    if (!_saveTimer) {
+      _saveTimer = setTimeout(_flushSaves, 500)
+    }
+  }
+
+  function _flushSaves() {
+    _saveTimer = null
+    const batch = { ..._pendingSave }
+    for (const ch in _pendingSave) delete _pendingSave[ch]
+    for (const [ch, msgs] of Object.entries(batch)) {
+      saveMessages(ch, msgs).catch(() => {})
+    }
+  }
 
   const currentMessages = computed(() => {
     const channels = useChannelsStore()
@@ -32,6 +54,10 @@ export const useMessagesStore = defineStore('messages', () => {
     ensureChannel(channel)
     messagesByChannel.value[channel].push(message)
     _trimToLimit(channel)
+    // Persist to IndexedDB (batched)
+    if (message.msgid) {
+      _scheduleSave(channel, [message])
+    }
   }
 
   function prependMessages(channel, newMessages) {
@@ -41,6 +67,11 @@ export const useMessagesStore = defineStore('messages', () => {
     const existingIds = new Set(existing.map(m => m.msgid).filter(Boolean))
     const unique = newMessages.filter(m => !m.msgid || !existingIds.has(m.msgid))
     messagesByChannel.value[channel] = [...unique, ...existing]
+    // Persist new unique messages to IndexedDB
+    const withMsgid = unique.filter(m => m.msgid)
+    if (withMsgid.length) {
+      _scheduleSave(channel, withMsgid)
+    }
   }
 
   function addSystemMessage(channel, text, subtype = 'info') {
@@ -72,6 +103,30 @@ export const useMessagesStore = defineStore('messages', () => {
 
   function clearChannel(channel) {
     messagesByChannel.value[channel] = []
+    dbClearChannel(channel).catch(() => {})
+  }
+
+  /**
+   * Load cached messages from IndexedDB for a channel.
+   * Returns true if messages were loaded.
+   */
+  async function loadFromDB(channel) {
+    try {
+      const cached = await loadMessages(channel, 200)
+      if (cached.length) {
+        ensureChannel(channel)
+        const existing = messagesByChannel.value[channel]
+        const existingIds = new Set(existing.map(m => m.msgid).filter(Boolean))
+        const unique = cached.filter(m => !m.msgid || !existingIds.has(m.msgid))
+        if (unique.length) {
+          messagesByChannel.value[channel] = [...unique, ...existing]
+        }
+        return true
+      }
+    } catch {
+      // IndexedDB not available or error — continue without cache
+    }
+    return false
   }
 
   function setReplyTarget(msg) {
@@ -91,6 +146,7 @@ export const useMessagesStore = defineStore('messages', () => {
     addSystemMessage,
     addReaction,
     clearChannel,
+    loadFromDB,
     setReplyTarget,
     clearReplyTarget,
   }

@@ -2,11 +2,11 @@
   <div>
     <!-- Reply bar -->
     <div v-if="replyTarget" class="reply-bar">
-      <IconReply :size="12" color="var(--q-text-muted)" />
+      <IconReply :size="16" color="var(--q-text-muted)" />
       <span class="reply-bar__nick" :style="{ color: replyNickColor }">{{ replyTarget.nick }}</span>
       <span class="reply-bar__text">{{ replyTarget.text.slice(0, 40) }}</span>
       <button class="reply-bar__close" @click="$emit('clearReply')">
-        <IconClose :size="14" color="var(--q-text-muted)" />
+        <IconClose :size="16" color="var(--q-text-muted)" />
       </button>
     </div>
 
@@ -37,7 +37,7 @@
         @change="onFileSelected"
       />
       <button class="input-bar__attach" aria-label="Attach file" @click="triggerFileInput">
-        <IconPaperclip :size="18" />
+        <IconPaperclip :size="20" />
       </button>
       <button
         class="input-bar__send"
@@ -353,7 +353,7 @@ defineExpose({ focus, uploading, progress })
 
 .input-bar__send--active {
   background: var(--q-accent-orange);
-  color: #000;
+  color: var(--q-text-on-accent);
 }
 
 .upload-error {

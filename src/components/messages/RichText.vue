@@ -82,7 +82,7 @@ const parts = computed(() => {
 
 <style scoped>
 .rich-inline {
-  background: #111;
+  background: var(--q-bg-secondary);
   padding: 1px 5px;
   border: 1px solid var(--q-border);
   font-size: 12px;

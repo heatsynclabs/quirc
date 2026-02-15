@@ -15,6 +15,9 @@
       v-show="loaded"
       :src="imgSrc"
       class="inline-img__img"
+      referrerpolicy="no-referrer"
+      crossorigin="anonymous"
+      loading="lazy"
       @load="loaded = true"
       @error="onError"
     />
@@ -56,7 +59,7 @@ function retry() {
 .inline-img__placeholder {
   width: 260px;
   height: 140px;
-  background: linear-gradient(135deg, #0a0a14, #101028, #0a1a30);
+  background: var(--q-bg-secondary);
   border: 1px solid var(--q-border);
   display: flex;
   align-items: center;

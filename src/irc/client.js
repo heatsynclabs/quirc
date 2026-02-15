@@ -71,7 +71,9 @@ export class IRCClient {
       }
     }
 
-    this.ws.onerror = () => {}
+    this.ws.onerror = (e) => {
+      console.error('[IRC] WebSocket error:', e)
+    }
 
     this.ws.onclose = (event) => {
       if (this.status !== 'disconnected' && this.status !== 'error') {
