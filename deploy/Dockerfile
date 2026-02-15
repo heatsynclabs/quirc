@@ -6,10 +6,13 @@ USER root
 ADD https://dl.min.io/client/mc/release/linux-amd64/mc /usr/local/bin/mc
 RUN chmod +x /usr/local/bin/mc
 
+# Ensure ergo user exists (some base image versions may not create it)
+RUN id ergo 2>/dev/null || adduser -D ergo
+
 COPY ircd.yaml /ircd/ircd.yaml
 COPY entrypoint.sh /ircd/entrypoint.sh
 RUN chmod +x /ircd/entrypoint.sh \
- && chown ergo:ergo /ircd/ircd.yaml /ircd/entrypoint.sh
+ && chown -R ergo:ergo /ircd
 
 USER ergo
 

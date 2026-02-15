@@ -20,7 +20,7 @@
       <!-- Error banner -->
       <div v-if="error" class="conn__error">{{ error }}</div>
 
-      <div class="conn__body">
+      <form class="conn__body" @submit.prevent>
 
         <!-- ═══ GUEST TAB ═══ -->
         <template v-if="tab === 'guest'">
@@ -229,7 +229,7 @@
             @click="onSaveProfile"
           >SAVE SERVER</button>
         </div>
-      </div>
+      </form>
 
       <!-- Saved servers -->
       <div v-if="savedServers.length && !tabsLocked" class="conn__saved">

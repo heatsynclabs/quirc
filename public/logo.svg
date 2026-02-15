@@ -211,6 +211,3 @@
   <rect x="161" y="126" width="6" height="6" fill="#08D9D6"/>
   <rect x="171.5" y="77" width="15" height="56" fill="#EAFF00"/>
 </svg>
-(node:3545) ExperimentalWarning: CommonJS module /Users/obsidian/Projects/hackbuild/quirc/[eval] is loading ES Module /Users/obsidian/Projects/hackbuild/quirc/src/utils/logoPixels.js using require().
-Support for loading ES Module in require() is an experimental feature and might change at any time
-(Use `node --trace-warnings ...` to show where the warning was created)

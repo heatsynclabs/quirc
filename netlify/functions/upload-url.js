@@ -2,7 +2,9 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { randomUUID } from 'crypto'
 
-const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || 'https://quirc.chat'
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || 'https://quirc.chat')
+  .split(',')
+  .map(s => s.trim())
 const MAX_FILE_SIZE = 25 * 1024 * 1024 // 25MB
 
 const ALLOWED_CONTENT_TYPES = [
@@ -13,9 +15,11 @@ const ALLOWED_CONTENT_TYPES = [
   /^text\/plain$/,
 ]
 
-function corsHeaders() {
+function corsHeaders(event) {
+  const origin = event?.headers?.origin || ''
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
   return {
-    'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+    'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   }
@@ -44,30 +48,30 @@ const s3 = new S3Client({
 
 export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: corsHeaders() }
+    return { statusCode: 204, headers: corsHeaders(event) }
   }
 
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: corsHeaders() }
+    return { statusCode: 405, headers: corsHeaders(event) }
   }
 
   let body
   try {
     body = JSON.parse(event.body)
   } catch {
-    return { statusCode: 400, headers: corsHeaders(), body: 'Invalid JSON' }
+    return { statusCode: 400, headers: corsHeaders(event), body: 'Invalid JSON' }
   }
 
   const { filename, contentType } = body
 
   if (!isValidFilename(filename)) {
-    return { statusCode: 400, headers: corsHeaders(), body: 'Invalid filename' }
+    return { statusCode: 400, headers: corsHeaders(event), body: 'Invalid filename' }
   }
 
   if (!contentType || !isAllowedContentType(contentType)) {
     return {
       statusCode: 400,
-      headers: corsHeaders(),
+      headers: corsHeaders(event),
       body: 'Content type not allowed. Allowed: image/*, video/*, audio/*, application/pdf, text/plain',
     }
   }
@@ -90,7 +94,7 @@ export async function handler(event) {
 
   return {
     statusCode: 200,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders() },
+    headers: { 'Content-Type': 'application/json', ...corsHeaders(event) },
     body: JSON.stringify({ url, cdnUrl }),
   }
 }

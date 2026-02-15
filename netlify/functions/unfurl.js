@@ -1,4 +1,6 @@
-const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || 'https://quirc.chat'
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || 'https://quirc.chat')
+  .split(',')
+  .map(s => s.trim())
 const MAX_RESPONSE_SIZE = 1024 * 1024 // 1MB
 const MAX_REDIRECTS = 3
 
@@ -16,9 +18,11 @@ const PRIVATE_IP_PATTERNS = [
   /^localhost$/i,
 ]
 
-function corsHeaders() {
+function corsHeaders(event) {
+  const origin = event?.headers?.origin || ''
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
   return {
-    'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+    'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   }
@@ -53,21 +57,21 @@ function validateUrl(urlStr) {
 
 export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: corsHeaders() }
+    return { statusCode: 204, headers: corsHeaders(event) }
   }
 
   if (event.httpMethod !== 'GET') {
-    return { statusCode: 405, headers: corsHeaders() }
+    return { statusCode: 405, headers: corsHeaders(event) }
   }
 
   const targetUrl = event.queryStringParameters?.url
   if (!targetUrl) {
-    return { statusCode: 400, headers: corsHeaders(), body: 'Missing url param' }
+    return { statusCode: 400, headers: corsHeaders(event), body: 'Missing url param' }
   }
 
   const validation = validateUrl(targetUrl)
   if (!validation.ok) {
-    return { statusCode: 400, headers: corsHeaders(), body: validation.reason }
+    return { statusCode: 400, headers: corsHeaders(event), body: validation.reason }
   }
 
   try {
@@ -81,19 +85,19 @@ export async function handler(event) {
     if (res.url) {
       const finalValidation = validateUrl(res.url)
       if (!finalValidation.ok) {
-        return { statusCode: 400, headers: corsHeaders(), body: 'Redirect to private URL blocked' }
+        return { statusCode: 400, headers: corsHeaders(event), body: 'Redirect to private URL blocked' }
       }
     }
 
     // Enforce size limit
     const contentLength = parseInt(res.headers.get('content-length') || '0')
     if (contentLength > MAX_RESPONSE_SIZE) {
-      return { statusCode: 413, headers: corsHeaders(), body: 'Response too large' }
+      return { statusCode: 413, headers: corsHeaders(event), body: 'Response too large' }
     }
 
     const html = await res.text()
     if (html.length > MAX_RESPONSE_SIZE) {
-      return { statusCode: 413, headers: corsHeaders(), body: 'Response too large' }
+      return { statusCode: 413, headers: corsHeaders(event), body: 'Response too large' }
     }
 
     const og = (prop) => {
@@ -113,7 +117,7 @@ export async function handler(event) {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=86400',
-        ...corsHeaders(),
+        ...corsHeaders(event),
       },
       body: JSON.stringify({
         title,
@@ -124,6 +128,6 @@ export async function handler(event) {
       }),
     }
   } catch {
-    return { statusCode: 502, headers: corsHeaders(), body: 'Failed to fetch URL' }
+    return { statusCode: 502, headers: corsHeaders(event), body: 'Failed to fetch URL' }
   }
 }

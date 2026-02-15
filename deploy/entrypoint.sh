@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 DB_PATH=/ircd/ircd.db
 BACKUP_INTERVAL="${BACKUP_INTERVAL:-300}"
@@ -7,6 +6,7 @@ BACKUP_INTERVAL="${BACKUP_INTERVAL:-300}"
 # ── S3/Spaces helpers ────────────────────────────────────────────────
 
 HAS_SPACES=false
+BACKUP_PID=""
 
 setup_mc() {
   if [ -z "$DO_SPACES_KEY" ] || [ -z "$DO_SPACES_SECRET" ] || [ -z "$DO_SPACES_BUCKET" ]; then
@@ -42,6 +42,31 @@ periodic_backup() {
   done
 }
 
+# ── Graceful shutdown ────────────────────────────────────────────────
+
+cleanup() {
+  echo "[backup] Shutting down..."
+
+  # Stop periodic backups first to avoid racing with final upload
+  if [ -n "$BACKUP_PID" ]; then
+    kill "$BACKUP_PID" 2>/dev/null
+    wait "$BACKUP_PID" 2>/dev/null
+  fi
+
+  # Let Ergo flush its database
+  kill -TERM "$PID" 2>/dev/null
+  wait "$PID" 2>/dev/null
+
+  # Final backup after Ergo has exited cleanly
+  if [ "$HAS_SPACES" = true ]; then
+    upload_db
+  fi
+
+  exit 0
+}
+
+trap cleanup TERM INT
+
 # ── Main ─────────────────────────────────────────────────────────────
 
 if setup_mc; then
@@ -51,21 +76,10 @@ fi
 
 if [ "$HAS_SPACES" = true ]; then
   periodic_backup &
+  BACKUP_PID=$!
 fi
 
-# Graceful shutdown: let Ergo flush, then upload final state
-cleanup() {
-  echo "[backup] Shutting down..."
-  kill -TERM "$PID" 2>/dev/null
-  wait "$PID" 2>/dev/null
-  if [ "$HAS_SPACES" = true ]; then
-    upload_db
-  fi
-  exit 0
-}
-trap cleanup TERM INT
-
-# Start Ergo in the foreground
+# Start Ergo — wait in a loop so signals can interrupt cleanly
 /ircd/ergo run --conf /ircd/ircd.yaml &
 PID=$!
-wait "$PID"
+wait "$PID" || true
