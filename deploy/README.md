@@ -119,16 +119,12 @@ history:
   retention:
     allow-individual-delete: false
   persistent:
-    enabled: true
-    unregistered-channels: false
-    registered-channels: "opt-out"
-    direct-messages: "opt-out"
+    enabled: false
 ```
 
 - `chathistory-maxmessages` — maximum messages returned per CHATHISTORY request
 - `expire-time: 168h` — messages older than 7 days are purged
-- `persistent.enabled: true` — history is written to disk (survives restarts)
-- `registered-channels: "opt-out"` — registered channels get persistent history by default
+- `persistent.enabled: false` — persistent history requires MySQL; disabled for BoltDB-only deployments. In-memory history (up to `channel-length` messages) still works and is backed up via the Spaces DB backup
 
 ### Server Operators
 

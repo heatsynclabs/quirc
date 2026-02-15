@@ -64,7 +64,6 @@ All client-side variables use the `VITE_` prefix and are embedded at build time.
 | `VITE_AUTO_JOIN` | Comma-separated channels to auto-join | `#general,#projects` |
 | `VITE_UPLOAD_API` | File upload presign endpoint | `/api/upload-url` |
 | `VITE_UNFURL_API` | Link unfurl endpoint | `/api/unfurl` |
-| `VITE_CDN_DOMAIN` | CDN domain for uploaded files | `quirc.sfo3.cdn.digitaloceanspaces.com` |
 
 Server-side only (Netlify Functions):
 

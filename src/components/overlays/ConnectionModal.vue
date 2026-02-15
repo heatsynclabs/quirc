@@ -345,7 +345,7 @@ watch(() => props.open, (val) => {
       tab.value = 'guest'
     }
   }
-})
+}, { immediate: true })
 
 watch(() => connection.errorMessage, (msg) => {
   if (msg) error.value = msg

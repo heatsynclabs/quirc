@@ -154,14 +154,16 @@ DO_SPACES_SECRET=your-secret-key
 DO_SPACES_REGION=sfo3
 DO_SPACES_BUCKET=your-bucket
 DO_SPACES_CDN_DOMAIN=your-bucket.sfo3.cdn.digitaloceanspaces.com
+CORS_ORIGIN=https://yourdomain.com
 ```
 
-4. Set the client-side variables:
+4. Set the client-side variable:
 
 ```bash
 VITE_UPLOAD_API=/api/upload-url
-VITE_CDN_DOMAIN=your-bucket.sfo3.cdn.digitaloceanspaces.com
 ```
+
+The CDN domain is configured server-side via `DO_SPACES_CDN_DOMAIN` — the Netlify Function returns the full CDN URL to the client after upload.
 
 The upload API runs as a Netlify Function. If you're not using Netlify, you'll need to implement a presigned URL endpoint yourself.
 

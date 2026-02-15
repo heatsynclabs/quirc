@@ -36,7 +36,7 @@ quirc/
 ├── deploy/
 │   ├── Dockerfile            # Ergo IRC + mc backup client, custom entrypoint for DB persistence
 │   ├── entrypoint.sh         # DB backup/restore to DO Spaces, periodic backup, graceful shutdown
-│   ├── ircd.yaml             # Ergo config: WebSocket :8080, enforce-utf8, persistent history
+│   ├── ircd.yaml             # Ergo config: WebSocket :8080, enforce-utf8, in-memory history
 │   └── app.yaml              # DO App Platform spec: basic-xxs, auto-deploy, Spaces backup envs
 │
 ├── netlify/functions/
@@ -363,7 +363,7 @@ Communities can share pre-configured links. Params are cleaned from the URL afte
 
 3. **app.yaml env vars** — Added `DO_SPACES_KEY`, `DO_SPACES_SECRET`, `DO_SPACES_REGION`, `DO_SPACES_BUCKET`, `BACKUP_INTERVAL` for the ergo service.
 
-4. **ircd.yaml audit fixes** — Fixed `websocket-origins` → correct `websockets.allowed-origins` key (was silently ignored). Removed dead `bouncer` section and invalid `retention.cutoff`. Added `history.persistent` (history was memory-only). Bumped `bcrypt-cost` 4→10. Tightened registration throttling 30→5 attempts. Added `max-channels-per-client`, `operator-only-creation`, channel registration limits. Added localhost to WebSocket origins.
+4. **ircd.yaml audit fixes** — Fixed `websocket-origins` → correct `websockets.allowed-origins` key (was silently ignored). Removed dead `bouncer` section and invalid `retention.cutoff`. Bumped `bcrypt-cost` 4→10. Tightened registration throttling 30→5 attempts. Added `max-channels-per-client`, `operator-only-creation`, channel registration limits. Added localhost to WebSocket origins. Note: `history.persistent` is disabled — current Ergo stable requires MySQL for persistent history. In-memory history (10k msgs/channel, 168h expiry) works fine and the DB backup preserves accounts/channels.
 
 ### Client Fixes
 
@@ -427,7 +427,6 @@ VITE_GATEWAY_URL=wss://irc.quirc.chat
 VITE_AUTO_JOIN=#general,#random
 VITE_UPLOAD_API=/api/upload-url
 VITE_UNFURL_API=/api/unfurl
-VITE_CDN_DOMAIN=quirc.sfo3.cdn.digitaloceanspaces.com
 
 # Server-side (Netlify Functions)
 DO_SPACES_KEY=
@@ -469,7 +468,7 @@ netlify deploy --prod  # or git push (auto-deploy)
 
 - **Ergo IRC server** in Docker container (`ghcr.io/ergochat/ergo:stable` + MinIO `mc` client)
 - **WebSocket only** on port 8080, App Platform terminates TLS
-- **Config:** `deploy/ircd.yaml` — multiclient, persistent chat history (168h), account registration
+- **Config:** `deploy/ircd.yaml` — multiclient, in-memory chat history (10k msgs, 168h expiry), account registration
 - **Database persistence:** `deploy/entrypoint.sh` backs up `ircd.db` to DO Spaces on startup/shutdown/every 5 min. Survives App Platform redeployments.
 - **Auto-deploy:** from `virgilvox/quirc` main branch via `deploy/app.yaml` spec
 - **Health check:** TCP on port 8080 (not HTTP — Ergo returns 400 for non-WebSocket requests)
