@@ -3,8 +3,8 @@
 **QUIRC** (QUick IRC) — mobile-first, self-hosted IRC client.
 Vue 3 + Vite + Pinia. Punk-zine aesthetic. Zero dependencies beyond Vue ecosystem.
 
-**Status:** Deployed to production. v0.3.0 — Libera-inspired UX improvements, system message types, user info cards.
-**Version:** 0.3.0 | **License:** MIT (quirc.chat)
+**Status:** Deployed to production. v0.4.0 — Deploy hardening, DB persistence, multi-origin CORS, image loading fix.
+**Version:** 0.4.0 | **License:** MIT (quirc.chat)
 
 **Production URLs:**
 - Frontend: https://quirc.chat (Netlify)
@@ -29,18 +29,19 @@ quirc/
 ├── quirc_app.jsx             # React mockup (design reference only, not used)
 │
 ├── public/
-│   ├── favicon.svg           # Pink "Q" pixel favicon
+│   ├── favicon.svg           # Pink "Q" pixel favicon (from logo pixel art)
 │   ├── manifest.json         # PWA manifest
 │   └── noise.svg             # feTurbulence noise texture
 │
 ├── deploy/
-│   ├── Dockerfile            # Ergo IRC from ghcr.io/ergochat/ergo:stable
-│   ├── ircd.yaml             # Ergo config: WebSocket :8080, enforce-utf8, bouncer, history
-│   └── app.yaml              # DO App Platform spec: basic-xxs, auto-deploy from GitHub
+│   ├── Dockerfile            # Ergo IRC + mc backup client, custom entrypoint for DB persistence
+│   ├── entrypoint.sh         # DB backup/restore to DO Spaces, periodic backup, graceful shutdown
+│   ├── ircd.yaml             # Ergo config: WebSocket :8080, enforce-utf8, in-memory history
+│   └── app.yaml              # DO App Platform spec: basic-xxs, auto-deploy, Spaces backup envs
 │
 ├── netlify/functions/
-│   ├── unfurl.js             # OpenGraph metadata proxy — SSRF-protected, CORS-locked
-│   └── upload-url.js         # Presigned S3 upload URL — type allowlist, size limit, CORS
+│   ├── unfurl.js             # OpenGraph metadata proxy — SSRF-protected, dynamic CORS
+│   └── upload-url.js         # Presigned S3 upload URL — type allowlist, size limit, dynamic CORS
 │
 └── src/
     ├── main.js               # Creates app, installs Pinia + Router, imports CSS
@@ -95,6 +96,13 @@ quirc/
         │   ├── IconPaperclip.vue     # File attach
         │   ├── IconSend.vue          # Send arrow
         │   ├── IconSettings.vue      # Gear
+        │   ├── IconChevron.vue       # Chevron arrow
+        │   ├── IconInfo.vue          # Info circle
+        │   ├── IconUsers.vue         # People group
+        │   ├── IconList.vue          # List lines
+        │   ├── IconGithub.vue        # GitHub logo
+        │   ├── IconSun.vue           # Sun (light theme)
+        │   ├── IconMoon.vue          # Moon (dark theme)
         │   └── index.js              # Barrel export
         │
         ├── logo/
@@ -319,7 +327,7 @@ Communities can share pre-configured links. Params are cleaned from the URL afte
 - **Message limit** — auto-trims oldest messages per channel (configurable in settings)
 - **SSRF protection** on unfurl proxy — rejects private IPs, auth URLs, enforces size limits
 - **Upload hardening** — content-type allowlist, filename validation, 25MB size limit
-- **CORS headers** on both Netlify functions — locked to quirc.chat origin
+- **CORS headers** on both Netlify functions — dynamic origin matching against comma-separated `CORS_ORIGIN` env var (defaults to quirc.chat)
 - **Server notice filtering** — `***` server connection notices suppressed from chat
 - **Event handler cleanup** — all IRC client listeners properly cleaned up in onUnmounted
 
@@ -342,6 +350,36 @@ Communities can share pre-configured links. Params are cleaned from the URL afte
 - **Chat history requires registered account** — Ergo stores history per-account. Guest users get no server-side history. A tip is shown on connect for unregistered users.
 - **NAMES prefix parsing** — only `@` (op) and `+` (voice) are handled. Multi-prefix modes (`~` owner, `&` admin, `%` halfop) are not stripped, which could store nicks with prefix characters.
 - **Touch hover on messages** — long-press sets hover state for action buttons but there's no mechanism to clear it on touch devices (mouseleave doesn't fire).
+
+---
+
+## v0.4.0 Changelog
+
+### Deploy Hardening
+
+1. **Database persistence** — New `deploy/entrypoint.sh` backs up `ircd.db` to DO Spaces via MinIO client (`mc`). Restores on startup, backs up every 5 min, saves on SIGTERM. Solves App Platform's ephemeral filesystem wiping accounts/channels/history on redeploy.
+
+2. **Dockerfile overhaul** — Installs `mc` binary, ensures `ergo` user exists, uses custom entrypoint instead of running Ergo directly. Proper signal handling with trap/cleanup.
+
+3. **app.yaml env vars** — Added `DO_SPACES_KEY`, `DO_SPACES_SECRET`, `DO_SPACES_REGION`, `DO_SPACES_BUCKET`, `BACKUP_INTERVAL` for the ergo service.
+
+4. **ircd.yaml audit fixes** — Fixed `websocket-origins` → correct `websockets.allowed-origins` key (was silently ignored). Removed dead `bouncer` section and invalid `retention.cutoff`. Bumped `bcrypt-cost` 4→10. Tightened registration throttling 30→5 attempts. Added `max-channels-per-client`, `operator-only-creation`, channel registration limits. Added localhost to WebSocket origins. Note: `history.persistent` is disabled — current Ergo stable requires MySQL for persistent history. In-memory history (10k msgs/channel, 168h expiry) works fine and the DB backup preserves accounts/channels.
+
+### Client Fixes
+
+5. **Image loading fix** — Removed `crossorigin="anonymous"` from InlineImage `<img>` tag. Was forcing CORS preflight on CDN image GETs, causing "LOADING" stuck state when CDN doesn't return CORS headers.
+
+6. **Connection defaults from env** — ConnectionModal now pre-fills server fields from `import.meta.env.VITE_*` with hardcoded fallbacks. Users can type a nick and connect immediately without touching server settings.
+
+7. **Password form warning** — Wrapped ConnectionModal body in `<form @submit.prevent>` to suppress Chrome "password field not in form" DOM warning.
+
+8. **Logo fix** — Removed Node.js error output appended to `public/logo.svg`.
+
+9. **Favicon from logo** — Replaced generic favicon with pixel-art Q extracted from the logo (same #FF2E63 on #0a0a0a).
+
+### Multi-Deployment CORS
+
+10. **Dynamic origin matching** — Both `upload-url.js` and `unfurl.js` now support comma-separated `CORS_ORIGIN` env var. Dynamically matches request `Origin` header against the allowed list. Enables forks (e.g. heatsynclabs.chat) to set their own origin without code changes.
 
 ---
 
@@ -386,18 +424,27 @@ Communities can share pre-configured links. Params are cleaned from the URL afte
 VITE_DEFAULT_SERVER=irc.quirc.chat
 VITE_DEFAULT_PORT=6697
 VITE_GATEWAY_URL=wss://irc.quirc.chat
-VITE_AUTO_JOIN=#general,#projects
+VITE_AUTO_JOIN=#general,#random
 VITE_UPLOAD_API=/api/upload-url
 VITE_UNFURL_API=/api/unfurl
-VITE_CDN_DOMAIN=quirc.sfo3.cdn.digitaloceanspaces.com
 
-# Server-side (Netlify Functions only)
+# Server-side (Netlify Functions)
 DO_SPACES_KEY=
 DO_SPACES_SECRET=
 DO_SPACES_REGION=sfo3
 DO_SPACES_BUCKET=quirc
 DO_SPACES_CDN_DOMAIN=quirc.sfo3.cdn.digitaloceanspaces.com
-CORS_ORIGIN=https://quirc.chat  # Used by unfurl.js and upload-url.js
+CORS_ORIGIN=https://quirc.chat  # Comma-separated for multiple origins (e.g. https://quirc.chat,https://fork.example.com)
+```
+
+**Ergo service env vars** (set in DO App Platform dashboard, NOT in `.env`):
+
+```env
+DO_SPACES_KEY=           # Same Spaces key — used by entrypoint.sh for DB backup
+DO_SPACES_SECRET=        # Same Spaces secret
+DO_SPACES_REGION=sfo3
+DO_SPACES_BUCKET=quirc
+BACKUP_INTERVAL=300      # Seconds between periodic DB backups (default 300)
 ```
 
 ---
@@ -419,11 +466,13 @@ netlify deploy --prod  # or git push (auto-deploy)
 
 ### IRC Server: DO App Platform (~$5/mo)
 
-- **Ergo IRC server** in Docker container (`ghcr.io/ergochat/ergo:stable`)
+- **Ergo IRC server** in Docker container (`ghcr.io/ergochat/ergo:stable` + MinIO `mc` client)
 - **WebSocket only** on port 8080, App Platform terminates TLS
-- **Config:** `deploy/ircd.yaml` — bouncer mode, chat history (168h), account registration
+- **Config:** `deploy/ircd.yaml` — multiclient, in-memory chat history (10k msgs, 168h expiry), account registration
+- **Database persistence:** `deploy/entrypoint.sh` backs up `ircd.db` to DO Spaces on startup/shutdown/every 5 min. Survives App Platform redeployments.
 - **Auto-deploy:** from `virgilvox/quirc` main branch via `deploy/app.yaml` spec
 - **Health check:** TCP on port 8080 (not HTTP — Ergo returns 400 for non-WebSocket requests)
+- **Env vars (set in dashboard):** `DO_SPACES_KEY`, `DO_SPACES_SECRET`, `DO_SPACES_REGION`, `DO_SPACES_BUCKET`, `BACKUP_INTERVAL`
 
 ```bash
 # Deploy or update

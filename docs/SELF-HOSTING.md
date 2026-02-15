@@ -48,7 +48,12 @@ VITE_AUTO_JOIN=#general,#random
 ```bash
 cd deploy
 docker build -t quirc-ergo .
-docker run -d -p 8080:8080 -v quirc-data:/ircd --name quirc-ergo quirc-ergo
+docker run -d -p 8080:8080 -v quirc-data:/ircd \
+  -e DO_SPACES_KEY=your-key \
+  -e DO_SPACES_SECRET=your-secret \
+  -e DO_SPACES_REGION=sfo3 \
+  -e DO_SPACES_BUCKET=your-bucket \
+  --name quirc-ergo quirc-ergo
 ```
 
 You'll need a reverse proxy (nginx, Caddy) in front to handle TLS:
@@ -96,8 +101,9 @@ Edit `deploy/ircd.yaml` and add your domain:
 
 ```yaml
 server:
-  websocket-origins:
-    - "https://yourdomain.com"
+  websockets:
+    allowed-origins:
+      - "https://yourdomain.com"
 ```
 
 Rebuild and restart the container after changing the config.
@@ -148,20 +154,22 @@ DO_SPACES_SECRET=your-secret-key
 DO_SPACES_REGION=sfo3
 DO_SPACES_BUCKET=your-bucket
 DO_SPACES_CDN_DOMAIN=your-bucket.sfo3.cdn.digitaloceanspaces.com
+CORS_ORIGIN=https://yourdomain.com
 ```
 
-4. Set the client-side variables:
+4. Set the client-side variable:
 
 ```bash
 VITE_UPLOAD_API=/api/upload-url
-VITE_CDN_DOMAIN=your-bucket.sfo3.cdn.digitaloceanspaces.com
 ```
+
+The CDN domain is configured server-side via `DO_SPACES_CDN_DOMAIN` — the Netlify Function returns the full CDN URL to the client after upload.
 
 The upload API runs as a Netlify Function. If you're not using Netlify, you'll need to implement a presigned URL endpoint yourself.
 
 ## Step 7: Customize Branding (Optional)
 
-QUIRC's visual style is controlled by CSS custom properties in `src/assets/main.css`. You can override:
+QUIRC's visual style is controlled by CSS custom properties in `src/styles/variables.css`. You can override:
 
 - Colors: `--q-accent-teal`, `--q-accent-orange`, etc.
 - Backgrounds: `--q-bg-primary`, `--q-bg-secondary`

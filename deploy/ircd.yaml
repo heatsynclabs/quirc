@@ -88,10 +88,7 @@ history:
   retention:
     allow-individual-delete: false
   persistent:
-    enabled: true
-    unregistered-channels: false
-    registered-channels: "opt-out"
-    direct-messages: "opt-out"
+    enabled: false
 
 logging:
   - method: stderr

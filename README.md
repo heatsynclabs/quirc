@@ -64,7 +64,6 @@ All client-side variables use the `VITE_` prefix and are embedded at build time.
 | `VITE_AUTO_JOIN` | Comma-separated channels to auto-join | `#general,#projects` |
 | `VITE_UPLOAD_API` | File upload presign endpoint | `/api/upload-url` |
 | `VITE_UNFURL_API` | Link unfurl endpoint | `/api/unfurl` |
-| `VITE_CDN_DOMAIN` | CDN domain for uploaded files | `quirc.sfo3.cdn.digitaloceanspaces.com` |
 
 Server-side only (Netlify Functions):
 
@@ -75,6 +74,7 @@ Server-side only (Netlify Functions):
 | `DO_SPACES_REGION` | Spaces region (e.g., `sfo3`) |
 | `DO_SPACES_BUCKET` | Spaces bucket name |
 | `DO_SPACES_CDN_DOMAIN` | Spaces CDN domain |
+| `CORS_ORIGIN` | Allowed origins for CORS (comma-separated) |
 
 Copy `.env.example` to `.env` and fill in your values.
 
